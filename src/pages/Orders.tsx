@@ -254,15 +254,15 @@ const Orders = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">ASAF POS</h1>
-              <p className="text-sm text-muted-foreground">
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <div className="flex flex-col">
+              <h1 className="text-lg sm:text-2xl font-bold">ASAF POS</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {localStorage.getItem("device_name")}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2 flex-wrap justify-end sm:justify-start">
               <Button
                 variant={isPrinterConnected ? "default" : "outline"}
                 size="icon"
