@@ -47,7 +47,7 @@ const OrderDetailsDialog = ({
       const data = await response.json();
       if (data.success) {
         toast.success(`סטטוס עודכן ל: ${getStatusLabel(newStatus)}`);
-        onUpdateStatus();
+        await onUpdateStatus(); // מחכים לעדכון לפני סגירה
         onClose();
       }
     } catch (error) {
