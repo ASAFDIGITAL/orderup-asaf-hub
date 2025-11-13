@@ -81,7 +81,7 @@ const OrderCard = ({ order, onViewDetails, onPrint, getStatusColor, getStatusLab
             className="flex-1"
             onClick={() => onViewDetails(order)}
           >
-            <Eye className="h-4 w-4 ml-2" />
+            <Eye className="h-4 w-4 mr-2" />
             פרטים
           </Button>
           <Button 
@@ -89,7 +89,7 @@ const OrderCard = ({ order, onViewDetails, onPrint, getStatusColor, getStatusLab
             className="flex-1"
             onClick={() => onPrint(order)}
           >
-            <Printer className="h-4 w-4 ml-2" />
+            <Printer className="h-4 w-4 mr-2" />
             הדפס
           </Button>
         </div>

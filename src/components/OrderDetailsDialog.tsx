@@ -90,7 +90,7 @@ const OrderDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
+      <DialogContent className="max-w-2xl max-h-[90vh]" dir="rtl">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl">הזמנה #{order.id}</DialogTitle>
@@ -208,7 +208,7 @@ const OrderDetailsDialog = ({
             onClick={() => onPrint(order)}
             className="flex-1"
           >
-            <Printer className="h-4 w-4 ml-2" />
+            <Printer className="h-4 w-4 mr-2" />
             הדפס
           </Button>
           {getNextStatusOptions(order.status).map((option) => (

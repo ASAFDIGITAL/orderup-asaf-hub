@@ -113,5 +113,11 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    direction: rtl;
+  }
+  
+  /* Fix for LTR content like phone numbers, URLs, etc */
+  [dir="ltr"] {
+    direction: ltr;
   }
 }
