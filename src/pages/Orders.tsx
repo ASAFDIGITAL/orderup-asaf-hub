@@ -210,6 +210,7 @@ const Orders = () => {
 
   const newOrders = filterOrders("new");
   const preparingOrders = filterOrders("preparing");
+  const outForDeliveryOrders = filterOrders("out_for_delivery");
   const completedOrders = filterOrders("completed");
 
   return (
@@ -266,7 +267,7 @@ const Orders = () => {
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="new" className="relative">
               חדש
               {newOrders.length > 0 && (
@@ -283,8 +284,16 @@ const Orders = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="out_for_delivery" className="relative">
+              בדרך
+              {outForDeliveryOrders.length > 0 && (
+                <Badge className="mr-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-purple-500">
+                  {outForDeliveryOrders.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="completed" className="relative">
-              הושלם
+              הושלמה
               {completedOrders.length > 0 && (
                 <Badge className="mr-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-gray-500">
                   {completedOrders.length}
@@ -330,6 +339,26 @@ const Orders = () => {
             {preparingOrders.length === 0 && (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">אין הזמנות בהכנה</p>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="out_for_delivery" className="mt-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {outForDeliveryOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onViewDetails={setSelectedOrder}
+                  onPrint={handlePrintOrder}
+                  getStatusColor={getStatusColor}
+                  getStatusLabel={getStatusLabel}
+                />
+              ))}
+            </div>
+            {outForDeliveryOrders.length === 0 && (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">אין משלוחים בדרך</p>
               </Card>
             )}
           </TabsContent>
