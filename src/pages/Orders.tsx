@@ -5,7 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, RefreshCw, Printer, Bell, BellOff, Bluetooth } from "lucide-react";
+import { LogOut, RefreshCw, Printer, Bell, BellOff, Bluetooth, Search, Filter, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Order } from "@/types/order";
 import OrderCard from "@/components/OrderCard";
 import OrderDetailsDialog from "@/components/OrderDetailsDialog";
@@ -28,6 +31,14 @@ const Orders = () => {
   });
   const [activeTab, setActiveTab] = useState("new");
   const [isPrinterConnected, setIsPrinterConnected] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [advancedFilters, setAdvancedFilters] = useState({
+    minAmount: "",
+    maxAmount: "",
+    startDate: "",
+    endDate: "",
+  });
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
 
   const token = localStorage.getItem("pos_token");
   const apiUrl = localStorage.getItem("pos_api_url");
@@ -213,9 +224,49 @@ const Orders = () => {
   };
 
   const filterOrders = (status: string) => {
-    if (status === "all") return orders;
-    return orders.filter((order) => order.status === status);
+    let filtered = status === "all" ? orders : orders.filter((order) => order.status === status);
+    
+    // חיפוש טקסט
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((order) => {
+        const matchesId = order.id.toString().includes(query);
+        const matchesCustomer = order.customer_name?.toLowerCase().includes(query);
+        const matchesPhone = order.customer_phone?.includes(query);
+        const matchesAmount = order.total.toString().includes(query);
+        return matchesId || matchesCustomer || matchesPhone || matchesAmount;
+      });
+    }
+    
+    // סינון מתקדם
+    if (advancedFilters.minAmount) {
+      filtered = filtered.filter((order) => order.total >= parseFloat(advancedFilters.minAmount));
+    }
+    if (advancedFilters.maxAmount) {
+      filtered = filtered.filter((order) => order.total <= parseFloat(advancedFilters.maxAmount));
+    }
+    if (advancedFilters.startDate) {
+      filtered = filtered.filter((order) => new Date(order.created_at) >= new Date(advancedFilters.startDate));
+    }
+    if (advancedFilters.endDate) {
+      filtered = filtered.filter((order) => new Date(order.created_at) <= new Date(advancedFilters.endDate + "T23:59:59"));
+    }
+    
+    return filtered;
   };
+  
+  const clearFilters = () => {
+    setSearchQuery("");
+    setAdvancedFilters({
+      minAmount: "",
+      maxAmount: "",
+      startDate: "",
+      endDate: "",
+    });
+  };
+  
+  const hasActiveFilters = searchQuery || advancedFilters.minAmount || advancedFilters.maxAmount || 
+                           advancedFilters.startDate || advancedFilters.endDate;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -305,6 +356,107 @@ const Orders = () => {
                 יציאה
               </Button>
             </div>
+          </div>
+        </div>
+        
+        {/* Search and Filter Bar */}
+        <div className="container mx-auto px-2 sm:px-4 py-2 border-t">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="חיפוש לפי מספר הזמנה, לקוח, טלפון או סכום..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 text-right"
+              />
+            </div>
+            
+            <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className={hasActiveFilters ? "border-primary" : ""}
+                >
+                  <Filter className={`h-4 w-4 ${hasActiveFilters ? "text-primary" : ""}`} />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>סינון מתקדם</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>טווח סכום</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="מינימום"
+                        value={advancedFilters.minAmount}
+                        onChange={(e) => setAdvancedFilters(prev => ({ ...prev, minAmount: e.target.value }))}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="מקסימום"
+                        value={advancedFilters.maxAmount}
+                        onChange={(e) => setAdvancedFilters(prev => ({ ...prev, maxAmount: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>טווח תאריכים</Label>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Label className="text-xs text-muted-foreground">מתאריך</Label>
+                        <Input
+                          type="date"
+                          value={advancedFilters.startDate}
+                          onChange={(e) => setAdvancedFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label className="text-xs text-muted-foreground">עד תאריך</Label>
+                        <Input
+                          type="date"
+                          value={advancedFilters.endDate}
+                          onChange={(e) => setAdvancedFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={clearFilters}
+                    >
+                      נקה סינון
+                    </Button>
+                    <Button 
+                      className="flex-1"
+                      onClick={() => setIsFilterDialogOpen(false)}
+                    >
+                      החל
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            {hasActiveFilters && (
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={clearFilters}
+                title="נקה את כל הפילטרים"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
