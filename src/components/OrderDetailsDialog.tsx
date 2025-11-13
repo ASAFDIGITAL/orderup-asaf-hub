@@ -142,10 +142,10 @@ const OrderDetailsDialog = ({
                     <div className="space-y-1 flex-1">
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        כמות: {item.qty} × ₪{item.unit_price.toFixed(2)}
+                        כמות: {item.qty} × ₪{Number(item.unit_price).toFixed(2)}
                       </div>
                     </div>
-                    <div className="font-bold">₪{item.total.toFixed(2)}</div>
+                    <div className="font-bold">₪{Number(item.total).toFixed(2)}</div>
                   </div>
 
                   {item.options?.choices && item.options.choices.length > 0 && (
@@ -177,16 +177,16 @@ const OrderDetailsDialog = ({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>ביניים</span>
-                <span>₪{order.subtotal.toFixed(2)}</span>
+                <span>₪{Number(order.subtotal).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>משלוח</span>
-                <span>₪{order.delivery_fee.toFixed(2)}</span>
+                <span>₪{Number(order.delivery_fee).toFixed(2)}</span>
               </div>
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>סה"כ</span>
-                <span>₪{order.total.toFixed(2)}</span>
+                <span>₪{Number(order.total).toFixed(2)}</span>
               </div>
             </div>
 
