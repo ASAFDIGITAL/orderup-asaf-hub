@@ -43,15 +43,35 @@ const Login = () => {
         return;
       }
 
-      const response = await fetch(`${normalized}/api/pos/auth`, {
+      const url = `${normalized}/api/pos/auth`;
+      console.log("🔍 Sending POST request to:", url);
+      console.log("📦 Request body:", { token: token.substring(0, 10) + "..." });
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         body: JSON.stringify({ token }),
       });
 
-      const data = await response.json();
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response headers:", Object.fromEntries(response.headers.entries()));
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      
+      if (contentType?.includes("application/json")) {
+        data = await response.json();
+        console.log("📥 Response data:", data);
+      } else {
+        const text = await response.text();
+        console.log("📥 Response text:", text.substring(0, 200));
+        toast.error("השרת החזיר תשובה לא תקינה (לא JSON)");
+        setIsLoading(false);
+        return;
+      }
 
       if (data.success) {
         localStorage.setItem("pos_token", token);
@@ -63,8 +83,12 @@ const Login = () => {
         toast.error(data.message || "טוקן לא תקין");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("שגיאה בהתחברות. בדוק את כתובת ה-API");
+      console.error("❌ Login error:", error);
+      if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+        toast.error("לא ניתן להתחבר לשרת. בדוק CORS או כתובת API");
+      } else {
+        toast.error("שגיאה בהתחברות: " + (error instanceof Error ? error.message : "שגיאה לא ידועה"));
+      }
     } finally {
       setIsLoading(false);
     }
