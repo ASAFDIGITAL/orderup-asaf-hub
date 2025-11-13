@@ -72,14 +72,15 @@ const OrderDetailsDialog = ({
       case 'new':
         return [
           { value: 'preparing', label: 'התחל הכנה', variant: 'default' as const },
-          { value: 'cancelled', label: 'בטל', variant: 'destructive' as const },
+          { value: 'canceled', label: 'בטל', variant: 'destructive' as const },
         ];
       case 'preparing':
         return [
-          { value: 'ready', label: 'סמן כמוכן', variant: 'default' as const },
-          { value: 'cancelled', label: 'בטל', variant: 'destructive' as const },
+          { value: 'out_for_delivery', label: 'שלח להספקה', variant: 'default' as const },
+          { value: 'completed', label: 'סמן כהושלם', variant: 'default' as const },
+          { value: 'canceled', label: 'בטל', variant: 'destructive' as const },
         ];
-      case 'ready':
+      case 'out_for_delivery':
         return [
           { value: 'completed', label: 'סמן כהושלם', variant: 'default' as const },
         ];

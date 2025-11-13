@@ -25,7 +25,7 @@ export interface Order {
   subtotal: number;
   delivery_fee: number;
   total: number;
-  status: 'new' | 'preparing' | 'ready' | 'completed' | 'cancelled' | 'pending_payment';
+  status: 'new' | 'preparing' | 'out_for_delivery' | 'completed' | 'canceled' | 'pending_payment' | 'paid' | 'failed';
   payment_method: 'cash' | 'card';
   notes?: string;
   created_at: string;
