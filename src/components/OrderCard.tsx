@@ -24,7 +24,7 @@ const OrderCard = ({ order, onViewDetails, onPrint, getStatusColor, getStatusLab
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-lg transition-shadow" dir="rtl">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
