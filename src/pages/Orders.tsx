@@ -16,7 +16,11 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [autoPrintEnabled, setAutoPrintEnabled] = useState(() => {
+    const saved = localStorage.getItem("auto_print_enabled");
+    return saved ? JSON.parse(saved) : true;
+  });
+  const [lastOrderIds, setLastOrderIds] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState("new");
 
   const token = localStorage.getItem("pos_token");
@@ -90,13 +94,28 @@ const Orders = () => {
         const newOrders = data.orders;
         
         // בדיקה אם יש הזמנות חדשות
-        const newOrdersCount = newOrders.filter((o: Order) => o.status === 'new').length;
-        if (soundEnabled && newOrdersCount > lastOrderCount) {
-          playNotificationSound();
-          toast.success(`הזמנה חדשה התקבלה! #${newOrders[0]?.id}`);
+        const currentNewOrders = newOrders.filter((o: Order) => o.status === 'new');
+        const newOrderIds = currentNewOrders.map((o: Order) => o.id);
+        
+        // מציאת הזמנות שלא היו בפעם הקודמת
+        const brandNewOrders = currentNewOrders.filter((o: Order) => !lastOrderIds.includes(o.id));
+        
+        if (brandNewOrders.length > 0) {
+          // התראה קולית
+          if (soundEnabled) {
+            playNotificationSound();
+            toast.success(`הזמנה חדשה התקבלה! #${brandNewOrders[0]?.id}`);
+          }
+          
+          // הדפסה אוטומטית
+          if (autoPrintEnabled) {
+            brandNewOrders.forEach(order => {
+              handlePrintOrder(order);
+            });
+          }
         }
         
-        setLastOrderCount(newOrdersCount);
+        setLastOrderIds(newOrderIds);
         setOrders(newOrders);
       }
     } catch (error) {
@@ -195,8 +214,22 @@ const Orders = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => setSoundEnabled(!soundEnabled)}
+                title={soundEnabled ? "כבה התראות" : "הפעל התראות"}
               >
                 {soundEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const newValue = !autoPrintEnabled;
+                  setAutoPrintEnabled(newValue);
+                  localStorage.setItem("auto_print_enabled", JSON.stringify(newValue));
+                  toast.success(newValue ? "הדפסה אוטומטית הופעלה" : "הדפסה אוטומטית כובתה");
+                }}
+                title={autoPrintEnabled ? "כבה הדפסה אוטומטית" : "הפעל הדפסה אוטומטית"}
+              >
+                <Printer className={`h-4 w-4 ${autoPrintEnabled ? "text-green-500" : ""}`} />
               </Button>
               <Button
                 variant="outline"
