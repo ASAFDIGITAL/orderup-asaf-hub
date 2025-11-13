@@ -183,10 +183,13 @@ const Orders = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "new": return "bg-blue-500";
+      case "pending_payment": return "bg-orange-500";
+      case "paid": return "bg-green-500";
       case "preparing": return "bg-yellow-500";
-      case "ready": return "bg-green-500";
+      case "out_for_delivery": return "bg-purple-500";
       case "completed": return "bg-gray-500";
-      case "cancelled": return "bg-red-500";
+      case "canceled": return "bg-red-500";
+      case "failed": return "bg-red-600";
       default: return "bg-gray-500";
     }
   };
@@ -194,17 +197,20 @@ const Orders = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "new": return "חדש";
+      case "pending_payment": return "ממתין לתשלום";
+      case "paid": return "שולם";
       case "preparing": return "בהכנה";
-      case "ready": return "מוכן";
+      case "out_for_delivery": return "בדרך";
       case "completed": return "הושלם";
-      case "cancelled": return "בוטל";
+      case "canceled": return "בוטל";
+      case "failed": return "נכשל";
       default: return status;
     }
   };
 
   const newOrders = filterOrders("new");
   const preparingOrders = filterOrders("preparing");
-  const readyOrders = filterOrders("ready");
+  const completedOrders = filterOrders("completed");
 
   return (
     <div className="min-h-screen bg-background">
@@ -277,11 +283,11 @@ const Orders = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="ready" className="relative">
-              מוכן
-              {readyOrders.length > 0 && (
-                <Badge className="mr-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-green-500">
-                  {readyOrders.length}
+            <TabsTrigger value="completed" className="relative">
+              הושלם
+              {completedOrders.length > 0 && (
+                <Badge className="mr-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-gray-500">
+                  {completedOrders.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -328,9 +334,9 @@ const Orders = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="ready" className="mt-6">
+          <TabsContent value="completed" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {readyOrders.map((order) => (
+              {completedOrders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
@@ -341,9 +347,9 @@ const Orders = () => {
                 />
               ))}
             </div>
-            {readyOrders.length === 0 && (
+            {completedOrders.length === 0 && (
               <Card className="p-8 text-center">
-                <p className="text-muted-foreground">אין הזמנות מוכנות</p>
+                <p className="text-muted-foreground">אין הזמנות שהושלמו</p>
               </Card>
             )}
           </TabsContent>
