@@ -101,7 +101,7 @@ const OrderDetailsDialog = ({
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 text-right">
             {/* פרטי לקוח */}
             <div className="space-y-2">
               <h3 className="font-semibold text-lg">פרטי לקוח</h3>
@@ -139,7 +139,7 @@ const OrderDetailsDialog = ({
               {order.items.map((item, index) => (
                 <div key={index} className="space-y-2 p-3 bg-muted/50 rounded-lg">
                   <div className="flex justify-between items-start">
-                    <div className="space-y-1 flex-1">
+                    <div className="space-y-1 flex-1 text-right">
                       <div className="font-medium">{item.name}</div>
                       <div className="text-sm text-muted-foreground">
                         כמות: {item.qty} × ₪{Number(item.unit_price).toFixed(2)}
@@ -149,7 +149,7 @@ const OrderDetailsDialog = ({
                   </div>
 
                   {item.options?.choices && item.options.choices.length > 0 && (
-                    <div className="text-sm space-y-1 pr-4 border-r-2 border-primary/20">
+                    <div className="text-sm space-y-1 pr-4 border-r-2 border-primary/20 text-right">
                       {item.options.choices.map((group, gIndex) => (
                         <div key={gIndex}>
                           <span className="font-medium">{group.group}: </span>
@@ -162,7 +162,7 @@ const OrderDetailsDialog = ({
                   )}
 
                   {item.options?.note && (
-                    <div className="text-sm pr-4 border-r-2 border-accent/40">
+                    <div className="text-sm pr-4 border-r-2 border-accent/40 text-right">
                       <span className="font-medium">הערה: </span>
                       <span className="text-muted-foreground">{item.options.note}</span>
                     </div>
@@ -176,24 +176,24 @@ const OrderDetailsDialog = ({
             {/* סיכום */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>ביניים</span>
                 <span>₪{Number(order.subtotal).toFixed(2)}</span>
+                <span>ביניים</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>משלוח</span>
                 <span>₪{Number(order.delivery_fee).toFixed(2)}</span>
+                <span>משלוח</span>
               </div>
               <Separator />
               <div className="flex justify-between text-lg font-bold">
-                <span>סה"כ</span>
                 <span>₪{Number(order.total).toFixed(2)}</span>
+                <span>סה"כ</span>
               </div>
             </div>
 
             {order.notes && (
               <>
                 <Separator />
-                <div className="space-y-2">
+                <div className="space-y-2 text-right">
                   <h3 className="font-semibold">הערות</h3>
                   <p className="text-sm text-muted-foreground">{order.notes}</p>
                 </div>
