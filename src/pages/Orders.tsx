@@ -21,6 +21,10 @@ const Orders = () => {
     return saved ? JSON.parse(saved) : true;
   });
   const [lastOrderIds, setLastOrderIds] = useState<number[]>([]);
+  const [printedOrderIds, setPrintedOrderIds] = useState<number[]>(() => {
+    const saved = localStorage.getItem("printed_order_ids");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [activeTab, setActiveTab] = useState("new");
 
   const token = localStorage.getItem("pos_token");
@@ -107,10 +111,15 @@ const Orders = () => {
             toast.success(`הזמנה חדשה התקבלה! #${brandNewOrders[0]?.id}`);
           }
           
-          // הדפסה אוטומטית
+          // הדפסה אוטומטית - רק להזמנות שלא הודפסו
           if (autoPrintEnabled) {
             brandNewOrders.forEach(order => {
-              handlePrintOrder(order);
+              if (!printedOrderIds.includes(order.id)) {
+                handlePrintOrder(order);
+                const updatedPrinted = [...printedOrderIds, order.id];
+                setPrintedOrderIds(updatedPrinted);
+                localStorage.setItem("printed_order_ids", JSON.stringify(updatedPrinted));
+              }
             });
           }
         }
