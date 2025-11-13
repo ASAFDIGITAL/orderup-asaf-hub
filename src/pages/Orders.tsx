@@ -38,23 +38,53 @@ const Orders = () => {
     if (!token || !apiUrl) return;
 
     try {
-      const response = await fetch(`${apiUrl}/api/pos/orders`, {
+      const url = `${apiUrl}/api/pos/orders`;
+      console.log("🔍 Fetching orders from:", url);
+      console.log("🔑 Using token:", token.substring(0, 20) + "...");
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
       });
 
+      console.log("📥 Response status:", response.status);
+      console.log("📥 Response headers:", Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        let errorBody;
+        
+        if (contentType?.includes("application/json")) {
+          errorBody = await response.json();
+          console.log("❌ Error response (JSON):", errorBody);
+        } else {
+          errorBody = await response.text();
+          console.log("❌ Error response (HTML/Text):", errorBody.substring(0, 500));
+        }
+
         if (response.status === 401) {
           toast.error("הטוקן לא תקין. מתנתק...");
           handleLogout();
           return;
         }
-        throw new Error("Failed to fetch orders");
+        
+        toast.error(`שגיאה ${response.status}: ${errorBody.message || "לא ניתן לטעון הזמנות"}`);
+        throw new Error(`Failed to fetch orders: ${response.status}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        const text = await response.text();
+        console.log("⚠️ Non-JSON response:", text.substring(0, 500));
+        toast.error("השרת החזיר תשובה לא תקינה (לא JSON)");
+        return;
       }
 
       const data = await response.json();
+      console.log("✅ Orders received:", data);
       
       if (data.success && Array.isArray(data.orders)) {
         const newOrders = data.orders;
@@ -70,8 +100,12 @@ const Orders = () => {
         setOrders(newOrders);
       }
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast.error("שגיאה בטעינת הזמנות");
+      console.error("❌ Error fetching orders:", error);
+      if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+        toast.error("לא ניתן להתחבר לשרת. בדוק CORS או כתובת API");
+      } else {
+        toast.error("שגיאה בטעינת הזמנות");
+      }
     }
   };
 
