@@ -7,6 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+const normalizeApiUrl = (u: string) => {
+  let s = u.trim();
+  if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
+  return s.replace(/\/+$/, "");
+};
+
 const Login = () => {
   const [token, setToken] = useState("");
   const [apiUrl, setApiUrl] = useState("");
@@ -29,7 +35,15 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${apiUrl}/api/pos/auth`, {
+      const normalized = normalizeApiUrl(apiUrl);
+
+      if (/lovable\.app/i.test(normalized)) {
+        toast.error("נא להזין את דומיין ה-Laravel (למשל https://shahin-kitchen.com), לא את כתובת האפליקציה");
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${normalized}/api/pos/auth`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,7 +55,7 @@ const Login = () => {
 
       if (data.success) {
         localStorage.setItem("pos_token", token);
-        localStorage.setItem("pos_api_url", apiUrl);
+        localStorage.setItem("pos_api_url", normalized);
         localStorage.setItem("device_name", data.device?.name || "POS Device");
         toast.success("התחברת בהצלחה!");
         navigate("/orders");
@@ -72,7 +86,7 @@ const Login = () => {
               <Input
                 id="apiUrl"
                 type="url"
-                placeholder="https://your-domain.com"
+                placeholder="https://shahin-kitchen.com"
                 value={apiUrl}
                 onChange={(e) => setApiUrl(e.target.value)}
                 disabled={isLoading}
