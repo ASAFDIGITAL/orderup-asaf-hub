@@ -71,7 +71,7 @@ const OrderCard = ({ order, onViewDetails, onPrint, getStatusColor, getStatusLab
               <Banknote className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">{order.payment_method === 'cash' ? 'מזומן' : 'אשראי'}</span>
             </div>
-            <div className="text-xl font-bold">₪{order.total.toFixed(2)}</div>
+            <div className="text-xl font-bold">₪{Number(order.total).toFixed(2)}</div>
           </div>
         </div>
 
