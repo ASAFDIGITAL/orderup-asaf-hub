@@ -110,7 +110,7 @@ const Login = () => {
               <Input
                 id="apiUrl"
                 type="url"
-                placeholder="דוגמה: https://shahin-kitchen.com"
+                placeholder="https://example.com/"
                 value={apiUrl}
                 onChange={(e) => setApiUrl(e.target.value)}
                 disabled={isLoading}
