@@ -350,7 +350,7 @@ const Orders = () => {
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
               </Button>
               <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 ml-2" />
+                <LogOut className="h-4 w-4 mr-2" />
                 יציאה
               </Button>
             </div>
