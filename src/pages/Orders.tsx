@@ -5,10 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, RefreshCw, Printer, Bell, BellOff } from "lucide-react";
+import { LogOut, RefreshCw, Printer, Bell, BellOff, Bluetooth } from "lucide-react";
 import { Order } from "@/types/order";
 import OrderCard from "@/components/OrderCard";
 import OrderDetailsDialog from "@/components/OrderDetailsDialog";
+import { thermalPrinter } from "@/services/thermalPrinter";
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const Orders = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [activeTab, setActiveTab] = useState("new");
+  const [isPrinterConnected, setIsPrinterConnected] = useState(false);
 
   const token = localStorage.getItem("pos_token");
   const apiUrl = localStorage.getItem("pos_api_url");
@@ -165,13 +167,48 @@ const Orders = () => {
     navigate("/");
   };
 
+  const handleConnectPrinter = async () => {
+    try {
+      toast.loading("מתחבר למדפסת...");
+      await thermalPrinter.initialize();
+      await thermalPrinter.connectToPrinter();
+      setIsPrinterConnected(true);
+      toast.success(`מחובר למדפסת: ${thermalPrinter.getPrinterName()}`);
+    } catch (error) {
+      console.error("Failed to connect printer:", error);
+      toast.error("לא ניתן להתחבר למדפסת");
+    }
+  };
+
+  const handleDisconnectPrinter = async () => {
+    try {
+      await thermalPrinter.disconnect();
+      setIsPrinterConnected(false);
+      toast.success("המדפסת נותקה");
+    } catch (error) {
+      toast.error("שגיאה בניתוק המדפסת");
+    }
+  };
+
   const handlePrintOrder = async (order: Order) => {
     try {
-      // כאן תהיה אינטגרציה עם מדפסת תרמית
-      toast.success(`מדפיס הזמנה #${order.id}`);
-      // בשלב הבא נוסיף את הקוד להדפסה בפועל
+      if (!isPrinterConnected) {
+        toast.error("יש להתחבר למדפסת תחילה");
+        return;
+      }
+
+      toast.loading(`מדפיס הזמנה #${order.id}...`);
+      await thermalPrinter.printReceipt(order);
+      
+      // עדכון רשימת הזמנות שהודפסו
+      const newPrintedIds = [...printedOrderIds, order.id];
+      setPrintedOrderIds(newPrintedIds);
+      localStorage.setItem("printed_order_ids", JSON.stringify(newPrintedIds));
+      
+      toast.success(`הזמנה #${order.id} הודפסה בהצלחה`);
     } catch (error) {
-      toast.error("שגיאה בהדפסה");
+      console.error("Print error:", error);
+      toast.error("שגיאה בהדפסה. ודא שהמדפסת מחוברת ופועלת.");
     }
   };
 
@@ -226,6 +263,14 @@ const Orders = () => {
               </p>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant={isPrinterConnected ? "default" : "outline"}
+                size="icon"
+                onClick={isPrinterConnected ? handleDisconnectPrinter : handleConnectPrinter}
+                title={isPrinterConnected ? "נתק מדפסת" : "התחבר למדפסת"}
+              >
+                <Bluetooth className={`h-4 w-4 ${isPrinterConnected ? "text-white" : ""}`} />
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
