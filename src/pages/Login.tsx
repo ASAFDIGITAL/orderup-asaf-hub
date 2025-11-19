@@ -33,9 +33,10 @@ const Login = () => {
     }
 
     setIsLoading(true);
+    let normalized = "";
 
     try {
-      const normalized = normalizeApiUrl(apiUrl);
+      normalized = normalizeApiUrl(apiUrl);
 
       if (/lovable\.app/i.test(normalized)) {
         toast.error("נא להזין את דומיין ה-Laravel (למשל https://shahin-kitchen.com), לא את כתובת האפליקציה");
@@ -85,7 +86,16 @@ const Login = () => {
     } catch (error) {
       console.error("❌ Login error:", error);
       if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
-        toast.error("לא ניתן להתחבר לשרת. בדוק CORS או כתובת API");
+        toast.error(
+          "לא ניתן להתחבר לשרת",
+          {
+            description: `נסה לבדוק:
+• האם ${normalized} זמין?
+• האם הגדרת CORS ב-Laravel?
+• האם SSL תקין (אם משתמש ב-HTTPS)?`,
+            duration: 8000,
+          }
+        );
       } else {
         toast.error("שגיאה בהתחברות: " + (error instanceof Error ? error.message : "שגיאה לא ידועה"));
       }
