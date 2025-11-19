@@ -21,7 +21,14 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: true,
+    // אפשר גישה לדומיין של Laravel
+    cleartext: true
+  },
+  server: {
+    // אפשר בקשות לכל דומיין חיצוני
+    cleartext: true,
+    androidScheme: 'https'
   }
 };
 
