@@ -5,10 +5,6 @@ const config: CapacitorConfig = {
   appName: 'ASAF POS',
   webDir: 'dist',
   bundledWebRuntime: false,
-  server: {
-    url: 'https://8f7fa3b3-93cb-4056-aaf1-cc6ad7d519ac.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 0
