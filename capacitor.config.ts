@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/core';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.8f7fa3b393cb4056aaf1cc6ad7d519ac',
+  appId: 'com.asafdigital.asafpos',
   appName: 'ASAF POS',
   webDir: 'dist',
   bundledWebRuntime: false,
