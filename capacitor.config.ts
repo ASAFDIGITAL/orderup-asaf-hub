@@ -28,7 +28,7 @@ const config: CapacitorConfig = {
   server: {
     // אפשר בקשות לכל דומיין חיצוני
     cleartext: true,
-    androidScheme: 'https'
+    androidScheme: 'http'
   }
 };
 
