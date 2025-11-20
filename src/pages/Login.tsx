@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,53 @@ const Login = () => {
   const [apiUrl, setApiUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  // התחברות אוטומטית בטעינת הדף
+  useEffect(() => {
+    const savedToken = localStorage.getItem("pos_token");
+    const savedApiUrl = localStorage.getItem("pos_api_url");
+
+    if (savedToken && savedApiUrl) {
+      console.log("🔄 Found saved credentials, attempting auto-login...");
+      setToken(savedToken);
+      setApiUrl(savedApiUrl);
+      
+      // התחברות אוטומטית
+      const autoLogin = async () => {
+        setIsLoading(true);
+        try {
+          const url = `${savedApiUrl}/api/pos/auth`;
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
+            body: JSON.stringify({ token: savedToken }),
+          });
+
+          const data = await response.json();
+          
+          if (data.success) {
+            console.log("✅ Auto-login successful");
+            localStorage.setItem("device_name", data.device?.name || "POS Device");
+            toast.success("התחברת אוטומטית!");
+            navigate("/orders");
+          } else {
+            console.log("❌ Auto-login failed, clearing saved credentials");
+            toast.error("טוקן שמור לא תקין, נא להתחבר מחדש");
+          }
+        } catch (error) {
+          console.error("❌ Auto-login error:", error);
+          toast.error("שגיאה בהתחברות אוטומטית");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      autoLogin();
+    }
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
