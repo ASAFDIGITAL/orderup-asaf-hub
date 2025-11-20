@@ -34,6 +34,7 @@ const Login = () => {
 
     setIsLoading(true);
     let normalized = "";
+    const startTime = performance.now();
 
     try {
       normalized = normalizeApiUrl(apiUrl);
@@ -45,8 +46,14 @@ const Login = () => {
       }
 
       const url = `${normalized}/api/pos/auth`;
+      
+      console.log("=== 🔐 LOGIN REQUEST START ===");
       console.log("🔍 Sending POST request to:", url);
       console.log("📦 Request body:", { token: token.substring(0, 10) + "..." });
+      console.log("⏰ Request timestamp:", new Date().toISOString());
+      console.log("🌐 Origin:", window.location.origin);
+      console.log("📱 User Agent:", navigator.userAgent);
+      console.log("🌐 Network state:", navigator.onLine ? "Online" : "Offline");
 
       const response = await fetch(url, {
         method: "POST",
@@ -57,34 +64,54 @@ const Login = () => {
         body: JSON.stringify({ token }),
       });
 
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+
+      console.log("=== 🔐 LOGIN RESPONSE ===");
       console.log("📥 Response status:", response.status);
+      console.log("📥 Response statusText:", response.statusText);
+      console.log("⏱️ Response time:", duration, "ms");
       console.log("📥 Response headers:", Object.fromEntries(response.headers.entries()));
 
       const contentType = response.headers.get("content-type");
+      console.log("📋 Content-Type:", contentType);
       let data;
       
       if (contentType?.includes("application/json")) {
         data = await response.json();
-        console.log("📥 Response data:", data);
+        console.log("✅ SUCCESS - Login response");
+        console.log("📦 Response data:", JSON.stringify(data, null, 2));
       } else {
         const text = await response.text();
-        console.log("📥 Response text:", text.substring(0, 200));
+        console.log("❌ Non-JSON response:", text.substring(0, 1000));
         toast.error("השרת החזיר תשובה לא תקינה (לא JSON)");
         setIsLoading(false);
         return;
       }
 
       if (data.success) {
+        console.log("✅ Authentication successful");
         localStorage.setItem("pos_token", token);
         localStorage.setItem("pos_api_url", normalized);
         localStorage.setItem("device_name", data.device?.name || "POS Device");
         toast.success("התחברת בהצלחה!");
         navigate("/orders");
       } else {
+        console.log("❌ Authentication failed:", data.message);
         toast.error(data.message || "טוקן לא תקין");
       }
     } catch (error) {
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+      
+      console.log("=== ❌ LOGIN ERROR ===");
       console.error("❌ Login error:", error);
+      console.error("⏱️ Failed after:", duration, "ms");
+      console.error("🔍 Error type:", error instanceof Error ? error.constructor.name : typeof error);
+      console.error("📝 Error message:", error instanceof Error ? error.message : String(error));
+      console.error("📚 Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      console.error("🌐 Network state:", navigator.onLine ? "Online" : "Offline");
+      
       if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
         toast.error(
           "לא ניתן להתחבר לשרת",
