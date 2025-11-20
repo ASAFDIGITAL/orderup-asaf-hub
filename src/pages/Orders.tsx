@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, RefreshCw, Printer, Bell, BellOff, Bluetooth, Search, Filter, X } from "lucide-react";
+import { LogOut, RefreshCw, Printer, Bell, BellOff, Bluetooth, Search, Filter, X, Bug } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -381,6 +381,14 @@ const Orders = () => {
                 disabled={isRefreshing}
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => navigate("/debug")}
+                title="מסך דיבוג"
+              >
+                <Bug className="h-4 w-4" />
               </Button>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
