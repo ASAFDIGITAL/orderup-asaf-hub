@@ -217,7 +217,7 @@ const Orders = () => {
       await thermalPrinter.initialize();
       await thermalPrinter.connectToPrinter();
       setIsPrinterConnected(true);
-      toast.success(`מחובר למדפסת: ${thermalPrinter.getPrinterName()}`);
+      toast.success(`מחובר למדפסת`);
     } catch (error) {
       console.error("Failed to connect printer:", error);
       toast.error("לא ניתן להתחבר למדפסת");
