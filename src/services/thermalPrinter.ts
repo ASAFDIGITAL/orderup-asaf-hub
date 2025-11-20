@@ -1,4 +1,4 @@
-import { BleClient, BleDevice } from '@capacitor-community/bluetooth-le';
+import { CapacitorThermalPrinter } from 'capacitor-thermal-printer';
 import { Order } from '@/types/order';
 
 // פקודות ESC/POS למדפסות תרמיות
@@ -6,20 +6,14 @@ const ESC = '\x1B';
 const GS = '\x1D';
 
 class ThermalPrinterService {
-  private device: BleDevice | null = null;
-  private serviceUuid = '000018f0-0000-1000-8000-00805f9b34fb'; // UUID סטנדרטי למדפסות תרמיות
-  private characteristicUuid = '00002af1-0000-1000-8000-00805f9b34fb';
+  private deviceAddress: string | null = null;
 
   /**
-   * אתחול והתחברות למדפסת
+   * אתחול - לא נדרש עבור plugin זה
    */
   async initialize(): Promise<void> {
-    try {
-      await BleClient.initialize();
-    } catch (error) {
-      console.error('Failed to initialize Bluetooth:', error);
-      throw new Error('לא ניתן לאתחל Bluetooth');
-    }
+    // Plugin זה לא דורש אתחול
+    console.log('Thermal printer ready');
   }
 
   /**
@@ -27,22 +21,52 @@ class ThermalPrinterService {
    */
   async connectToPrinter(): Promise<void> {
     try {
-      // בקשת הרשאות
-      await BleClient.initialize();
+      return new Promise((resolve, reject) => {
+        const discoveredDevices: any[] = [];
+        
+        // האזנה למכשירים שנמצאו
+        CapacitorThermalPrinter.addListener('discoverDevices', (devices) => {
+          console.log('מכשירים שנמצאו:', devices);
+          discoveredDevices.push(...devices.devices);
+        });
 
-      // חיפוש מכשירים זמינים - ללא סינון UUID כדי למצוא את כל המכשירים
-      const device = await BleClient.requestDevice({
-        // לא מציינים optionalServices כדי לראות את כל המכשירים
+        // התחל סריקה
+        CapacitorThermalPrinter.startScan()
+          .then(() => {
+            console.log('סריקה החלה...');
+            
+            // חכה 5 שניות ואז עצור את הסריקה
+            setTimeout(async () => {
+              await CapacitorThermalPrinter.stopScan();
+              
+              if (discoveredDevices.length === 0) {
+                reject(new Error('לא נמצאו מדפסות. ודא שהמדפסת דלוקה וקרובה.'));
+                return;
+              }
+
+              // נסה להתחבר למכשיר הראשון
+              const printer = discoveredDevices[0];
+              const result = await CapacitorThermalPrinter.connect({ 
+                address: printer.address 
+              });
+              
+              if (result && result.address) {
+                this.deviceAddress = result.address;
+                console.log('התחבר למדפסת:', result.name, result.address);
+                resolve();
+              } else {
+                reject(new Error('כישלון בהתחברות למדפסת'));
+              }
+            }, 5000);
+          })
+          .catch((error) => {
+            console.error('שגיאה בסריקה:', error);
+            reject(error);
+          });
       });
-
-      // התחברות למכשיר
-      await BleClient.connect(device.deviceId);
-      this.device = device;
-      
-      console.log('Connected to printer:', device.name, 'ID:', device.deviceId);
     } catch (error) {
       console.error('Failed to connect to printer:', error);
-      throw new Error('לא ניתן להתחבר למדפסת');
+      throw error;
     }
   }
 
@@ -50,10 +74,11 @@ class ThermalPrinterService {
    * ניתוק מהמדפסת
    */
   async disconnect(): Promise<void> {
-    if (this.device) {
+    if (this.deviceAddress) {
       try {
-        await BleClient.disconnect(this.device.deviceId);
-        this.device = null;
+        await CapacitorThermalPrinter.disconnect();
+        this.deviceAddress = null;
+        console.log('מנותק מהמדפסת');
       } catch (error) {
         console.error('Failed to disconnect:', error);
       }
@@ -61,137 +86,109 @@ class ThermalPrinterService {
   }
 
   /**
-   * שליחת פקודות למדפסת
-   */
-  private async sendCommand(command: string): Promise<void> {
-    if (!this.device) {
-      throw new Error('לא מחובר למדפסת');
-    }
-
-    try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(command);
-      
-      await BleClient.write(
-        this.device.deviceId,
-        this.serviceUuid,
-        this.characteristicUuid,
-        new DataView(data.buffer)
-      );
-    } catch (error) {
-      console.error('Failed to send command:', error);
-      throw new Error('שגיאה בשליחת פקודה למדפסת');
-    }
-  }
-
-  /**
    * פורמט טקסט למדפסת תרמית
    */
-  private formatReceipt(order: Order): string {
-    let receipt = '';
-    
-    // אתחול מדפסת
-    receipt += ESC + '@';
-    
-    // יישור למרכז וגודל גדול
-    receipt += ESC + 'a' + '\x01'; // מרכז
-    receipt += ESC + '!' + '\x30'; // גודל כפול
+  private formatReceiptText(order: Order): string {
     
     // כותרת
-    receipt += '====================\n';
-    receipt += `הזמנה #${order.id}\n`;
-    receipt += '====================\n\n';
-    
-    // יישור לשמאל וגודל רגיל
-    receipt += ESC + 'a' + '\x00'; // שמאל
-    receipt += ESC + '!' + '\x00'; // רגיל
+    let text = '====================\n';
+    text += `הזמנה #${order.id}\n`;
+    text += '====================\n\n';
     
     // פרטי לקוח
-    receipt += `לקוח: ${order.customer_name}\n`;
+    text += `לקוח: ${order.customer_name}\n`;
     if (order.customer_phone) {
-      receipt += `טלפון: ${order.customer_phone}\n`;
+      text += `טלפון: ${order.customer_phone}\n`;
     }
     if (order.customer_address) {
-      receipt += `כתובת: ${order.customer_address}\n`;
+      text += `כתובת: ${order.customer_address}\n`;
     }
-    receipt += '\n';
+    text += '\n';
     
     // פרטי הזמנה
-    receipt += '--------------------\n';
-    receipt += 'פריטים:\n';
-    receipt += '--------------------\n';
+    text += '--------------------\n';
+    text += 'פריטים:\n';
+    text += '--------------------\n';
     
     // פריטים
     order.items.forEach((item) => {
-      receipt += `${item.qty}x ${item.name}\n`;
+      text += `${item.qty}x ${item.name}\n`;
       
       // אפשרויות
       if (item.options?.choices && item.options.choices.length > 0) {
         item.options.choices.forEach((choice) => {
-          receipt += `  ${choice.group}:\n`;
+          text += `  ${choice.group}:\n`;
           choice.items.forEach((subItem) => {
-            receipt += `    + ${subItem.name}\n`;
+            text += `    + ${subItem.name}\n`;
           });
         });
       }
       
       // הערה
       if (item.options?.note) {
-        receipt += `  הערה: ${item.options.note}\n`;
+        text += `  הערה: ${item.options.note}\n`;
       }
       
-      receipt += `  ${item.total} ש"ח\n\n`;
+      text += `  ${item.total} ש"ח\n\n`;
     });
     
     // סיכום
-    receipt += '--------------------\n';
-    receipt += ESC + '!' + '\x10'; // גודל גדול יותר
-    receipt += `סכום ביניים: ${order.subtotal} ש"ח\n`;
+    text += '--------------------\n';
+    text += `סכום ביניים: ${order.subtotal} ש"ח\n`;
     if (order.delivery_fee > 0) {
-      receipt += `דמי משלוח: ${order.delivery_fee} ש"ח\n`;
+      text += `דמי משלוח: ${order.delivery_fee} ש"ח\n`;
     }
-    receipt += ESC + '!' + '\x30'; // גודל כפול
-    receipt += `סה"כ: ${order.total} ש"ח\n`;
-    receipt += ESC + '!' + '\x00'; // גודל רגיל
-    receipt += '--------------------\n\n';
+    text += `סה"כ: ${order.total} ש"ח\n`;
+    text += '--------------------\n\n';
     
     // הערות
     if (order.notes) {
-      receipt += 'הערות:\n';
-      receipt += `${order.notes}\n\n`;
+      text += 'הערות:\n';
+      text += `${order.notes}\n\n`;
     }
     
     // תשלום
     if (order.payment_method) {
-      receipt += `אמצעי תשלום: ${order.payment_method}\n`;
+      text += `אמצעי תשלום: ${order.payment_method}\n`;
     }
     
     // משלוח
     if (order.shipping_method) {
-      receipt += `אופן משלוח: ${order.shipping_method}\n`;
+      text += `אופן משלוח: ${order.shipping_method}\n`;
     }
     
-    receipt += '\n';
-    receipt += ESC + 'a' + '\x01'; // מרכז
-    receipt += 'תודה רבה!\n\n\n';
+    text += '\n';
+    text += 'תודה רבה!\n\n\n';
     
-    // חיתוך
-    receipt += GS + 'V' + '\x00';
-    
-    return receipt;
+    return text;
   }
 
   /**
    * הדפסת קבלה
    */
   async printReceipt(order: Order): Promise<void> {
-    if (!this.device) {
+    if (!this.deviceAddress) {
       throw new Error('לא מחובר למדפסת. יש להתחבר תחילה.');
     }
 
     try {
-      const receipt = this.formatReceipt(order);
-      await this.sendCommand(receipt);
+      const receiptText = this.formatReceiptText(order);
+      
+      await CapacitorThermalPrinter.begin()
+        .align('center')
+        .bold()
+        .text(`הזמנה #${order.id}\n`)
+        .clearFormatting()
+        .text('====================\n\n')
+        .align('right')
+        .text(receiptText)
+        .text('\n\n')
+        .align('center')
+        .text('תודה רבה!\n\n')
+        .cutPaper()
+        .write();
+        
+      console.log('קבלה הודפסה בהצלחה');
     } catch (error) {
       console.error('Failed to print receipt:', error);
       throw error;
@@ -202,14 +199,14 @@ class ThermalPrinterService {
    * בדיקה האם מחובר למדפסת
    */
   isConnected(): boolean {
-    return this.device !== null;
+    return this.deviceAddress !== null;
   }
 
   /**
-   * קבלת שם המדפסת המחוברת
+   * קבלת כתובת המדפסת המחוברת
    */
-  getPrinterName(): string | null {
-    return this.device?.name || null;
+  getPrinterAddress(): string | null {
+    return this.deviceAddress;
   }
 }
 
