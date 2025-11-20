@@ -30,16 +30,16 @@ class ThermalPrinterService {
       // בקשת הרשאות
       await BleClient.initialize();
 
-      // חיפוש מכשירים זמינים
+      // חיפוש מכשירים זמינים - ללא סינון UUID כדי למצוא את כל המכשירים
       const device = await BleClient.requestDevice({
-        optionalServices: [this.serviceUuid],
+        // לא מציינים optionalServices כדי לראות את כל המכשירים
       });
 
       // התחברות למכשיר
       await BleClient.connect(device.deviceId);
       this.device = device;
       
-      console.log('Connected to printer:', device.name);
+      console.log('Connected to printer:', device.name, 'ID:', device.deviceId);
     } catch (error) {
       console.error('Failed to connect to printer:', error);
       throw new Error('לא ניתן להתחבר למדפסת');
