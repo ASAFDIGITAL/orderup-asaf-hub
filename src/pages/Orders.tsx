@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Order } from "@/types/order";
 import OrderCard from "@/components/OrderCard";
 import OrderDetailsDialog from "@/components/OrderDetailsDialog";
+import PrinterSelectionDialog from "@/components/PrinterSelectionDialog";
 import { thermalPrinter } from "@/services/thermalPrinter";
 
 const Orders = () => {
@@ -31,6 +32,7 @@ const Orders = () => {
   });
   const [activeTab, setActiveTab] = useState("new");
   const [isPrinterConnected, setIsPrinterConnected] = useState(false);
+  const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [advancedFilters, setAdvancedFilters] = useState({
     minAmount: "",
@@ -211,17 +213,12 @@ const Orders = () => {
     navigate("/");
   };
 
-  const handleConnectPrinter = async () => {
-    try {
-      toast.loading("מתחבר למדפסת...");
-      await thermalPrinter.initialize();
-      await thermalPrinter.connectToPrinter();
-      setIsPrinterConnected(true);
-      toast.success(`מחובר למדפסת`);
-    } catch (error) {
-      console.error("Failed to connect printer:", error);
-      toast.error("לא ניתן להתחבר למדפסת");
-    }
+  const handleConnectPrinter = () => {
+    setIsPrinterDialogOpen(true);
+  };
+
+  const handlePrinterConnected = () => {
+    setIsPrinterConnected(true);
   };
 
   const handleDisconnectPrinter = async () => {
@@ -596,6 +593,13 @@ const Orders = () => {
           getStatusLabel={getStatusLabel}
         />
       )}
+
+      {/* Printer Selection Dialog */}
+      <PrinterSelectionDialog
+        open={isPrinterDialogOpen}
+        onOpenChange={setIsPrinterDialogOpen}
+        onConnected={handlePrinterConnected}
+      />
     </div>
   );
 };

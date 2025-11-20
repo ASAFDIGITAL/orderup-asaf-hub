@@ -17,9 +17,9 @@ class ThermalPrinterService {
   }
 
   /**
-   * חיפוש והתחברות למדפסת זמינה
+   * חיפוש מדפסות זמינות
    */
-  async connectToPrinter(): Promise<void> {
+  async scanForPrinters(): Promise<any[]> {
     try {
       return new Promise((resolve, reject) => {
         const discoveredDevices: any[] = [];
@@ -44,19 +44,7 @@ class ThermalPrinterService {
                 return;
               }
 
-              // נסה להתחבר למכשיר הראשון
-              const printer = discoveredDevices[0];
-              const result = await CapacitorThermalPrinter.connect({ 
-                address: printer.address 
-              });
-              
-              if (result && result.address) {
-                this.deviceAddress = result.address;
-                console.log('התחבר למדפסת:', result.name, result.address);
-                resolve();
-              } else {
-                reject(new Error('כישלון בהתחברות למדפסת'));
-              }
+              resolve(discoveredDevices);
             }, 5000);
           })
           .catch((error) => {
@@ -64,6 +52,25 @@ class ThermalPrinterService {
             reject(error);
           });
       });
+    } catch (error) {
+      console.error('Failed to scan for printers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * התחברות למדפסת לפי כתובת
+   */
+  async connectToPrinter(address: string): Promise<void> {
+    try {
+      const result = await CapacitorThermalPrinter.connect({ address });
+      
+      if (result && result.address) {
+        this.deviceAddress = result.address;
+        console.log('התחבר למדפסת:', result.name, result.address);
+      } else {
+        throw new Error('כישלון בהתחברות למדפסת');
+      }
     } catch (error) {
       console.error('Failed to connect to printer:', error);
       throw error;
