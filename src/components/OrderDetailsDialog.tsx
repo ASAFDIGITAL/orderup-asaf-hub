@@ -32,8 +32,16 @@ const OrderDetailsDialog = ({
   const handleStatusChange = async (newStatus: string) => {
     if (!token || !apiUrl) return;
 
+    const startTime = performance.now();
+    const url = `${apiUrl}/api/pos/orders/${order.id}/status`;
+
     try {
-      const response = await fetch(`${apiUrl}/api/pos/orders/${order.id}/status`, {
+      console.log("=== 🔄 STATUS UPDATE REQUEST ===");
+      console.log("🔍 PUT request to:", url);
+      console.log("📦 Request body:", { status: newStatus });
+      console.log("⏰ Request timestamp:", new Date().toISOString());
+
+      const response = await fetch(url, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -42,16 +50,37 @@ const OrderDetailsDialog = ({
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!response.ok) throw new Error("Failed to update status");
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+
+      console.log("=== 🔄 STATUS UPDATE RESPONSE ===");
+      console.log("📥 Response status:", response.status);
+      console.log("⏱️ Response time:", duration, "ms");
+      console.log("📥 Response headers:", Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        console.log("❌ Failed to update status - status code:", response.status);
+        throw new Error("Failed to update status");
+      }
 
       const data = await response.json();
+      console.log("✅ SUCCESS - Status updated:", JSON.stringify(data, null, 2));
+
       if (data.success) {
         toast.success(`סטטוס עודכן ל: ${getStatusLabel(newStatus)}`);
         await onUpdateStatus(); // מחכים לעדכון לפני סגירה
         onClose();
       }
     } catch (error) {
-      console.error("Error updating status:", error);
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+
+      console.log("=== ❌ STATUS UPDATE ERROR ===");
+      console.error("❌ Error updating status:", error);
+      console.error("⏱️ Failed after:", duration, "ms");
+      console.error("🔍 Error type:", error instanceof Error ? error.constructor.name : typeof error);
+      console.error("📝 Error message:", error instanceof Error ? error.message : String(error));
+
       toast.error("שגיאה בעדכון סטטוס");
     }
   };

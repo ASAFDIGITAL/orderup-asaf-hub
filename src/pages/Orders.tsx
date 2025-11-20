@@ -58,10 +58,16 @@ const Orders = () => {
   const fetchOrders = async () => {
     if (!token || !apiUrl) return;
 
+    const startTime = performance.now();
+    
     try {
       const url = `${apiUrl}/api/pos/orders`;
+      console.log("=== 📡 NETWORK REQUEST START ===");
       console.log("🔍 Fetching orders from:", url);
       console.log("🔑 Using token:", token.substring(0, 20) + "...");
+      console.log("⏰ Request timestamp:", new Date().toISOString());
+      console.log("🌐 Origin:", window.location.origin);
+      console.log("📱 User Agent:", navigator.userAgent);
 
       const response = await fetch(url, {
         headers: {
@@ -71,22 +77,37 @@ const Orders = () => {
         },
       });
 
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+      
+      console.log("=== 📡 NETWORK RESPONSE ===");
       console.log("📥 Response status:", response.status);
+      console.log("📥 Response statusText:", response.statusText);
+      console.log("⏱️ Response time:", duration, "ms");
       console.log("📥 Response headers:", Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
+        console.log("❌ ERROR RESPONSE - Content-Type:", contentType);
         let errorBody;
         
         if (contentType?.includes("application/json")) {
           errorBody = await response.json();
-          console.log("❌ Error response (JSON):", errorBody);
+          console.log("❌ Error response (JSON):", JSON.stringify(errorBody, null, 2));
         } else {
           errorBody = await response.text();
-          console.log("❌ Error response (HTML/Text):", errorBody.substring(0, 500));
+          console.log("❌ Error response (Text):", errorBody.substring(0, 1000));
         }
+        
+        console.log("❌ Full error context:", {
+          status: response.status,
+          statusText: response.statusText,
+          url: url,
+          headers: Object.fromEntries(response.headers.entries()),
+        });
 
         if (response.status === 401) {
+          console.log("🔐 Unauthorized - logging out");
           toast.error("הטוקן לא תקין. מתנתק...");
           handleLogout();
           return;
@@ -105,8 +126,10 @@ const Orders = () => {
       }
 
       const data = await response.json();
-      console.log("✅ Orders received:", data);
-      
+      console.log("✅ SUCCESS - Orders received");
+      console.log("📦 Response data:", JSON.stringify(data, null, 2));
+      console.log("📊 Orders count:", data.orders?.length || 0);
+
       if (data.success && Array.isArray(data.orders)) {
         const newOrders = data.orders;
         
@@ -141,7 +164,17 @@ const Orders = () => {
         setOrders(newOrders);
       }
     } catch (error) {
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+      
+      console.log("=== ❌ NETWORK ERROR ===");
       console.error("❌ Error fetching orders:", error);
+      console.error("⏱️ Failed after:", duration, "ms");
+      console.error("🔍 Error type:", error instanceof Error ? error.constructor.name : typeof error);
+      console.error("📝 Error message:", error instanceof Error ? error.message : String(error));
+      console.error("📚 Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      console.error("🌐 Network state:", navigator.onLine ? "Online" : "Offline");
+      
       if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
         toast.error("לא ניתן להתחבר לשרת. בדוק CORS או כתובת API");
       } else {
