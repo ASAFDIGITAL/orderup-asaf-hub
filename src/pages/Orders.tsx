@@ -327,6 +327,7 @@ const Orders = () => {
 
   const newOrders = filterOrders("new");
   const preparingOrders = filterOrders("preparing");
+  const completedOrders = filterOrders("completed");
   const allOrders = filterOrders("all");
   
   // חישוב סטטיסטיקות כלליות
@@ -338,6 +339,20 @@ const Orders = () => {
     canceled: allOrders.filter(o => o.status === 'canceled').length,
     pending_payment: allOrders.filter(o => o.status === 'pending_payment').length,
   };
+  
+  // חישוב הזמנות היום בלבד
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayOrders = orders.filter((order) => {
+    const orderDate = new Date(order.created_at);
+    orderDate.setHours(0, 0, 0, 0);
+    return orderDate.getTime() === today.getTime();
+  });
+  
+  const todayStats = {
+    total: todayOrders.length,
+    completed: todayOrders.filter(o => o.status === 'completed').length,
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -345,11 +360,14 @@ const Orders = () => {
       <div className="bg-card border-b sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-2xl font-bold">ASAF POS</h1>
               <span className="text-xs sm:text-sm text-muted-foreground">
                 {localStorage.getItem("device_name")}
               </span>
+              <Badge variant="outline" className="bg-primary/10">
+                היום: {todayStats.total} הזמנות • הושלמו: {todayStats.completed}
+              </Badge>
             </div>
             <div className="flex gap-1 sm:gap-2 flex-wrap justify-end sm:justify-start">
               {/* כפתורים למחשב */}
@@ -542,7 +560,7 @@ const Orders = () => {
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="new" className="relative">
               חדש
               {newOrders.length > 0 && (
@@ -556,6 +574,14 @@ const Orders = () => {
               {preparingOrders.length > 0 && (
                 <Badge className="mr-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-yellow-500">
                   {preparingOrders.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="relative">
+              הושלמו
+              {completedOrders.length > 0 && (
+                <Badge className="mr-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-green-500">
+                  {completedOrders.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -598,6 +624,26 @@ const Orders = () => {
             {preparingOrders.length === 0 && (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">אין הזמנות בהכנה</p>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="completed" className="mt-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {completedOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onViewDetails={setSelectedOrder}
+                  onPrint={handlePrintOrder}
+                  getStatusColor={getStatusColor}
+                  getStatusLabel={getStatusLabel}
+                />
+              ))}
+            </div>
+            {completedOrders.length === 0 && (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">אין הזמנות שהושלמו</p>
               </Card>
             )}
           </TabsContent>
