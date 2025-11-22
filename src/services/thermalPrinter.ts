@@ -154,6 +154,14 @@ class ThermalPrinterService {
   }
 
   /**
+   * היפוך טקסט RTL למדפסת תרמית
+   * מדפסות תרמיות רבות לא תומכות ב-RTL, לכן צריך להפוך את הטקסט ידנית
+   */
+  private reverseText(text: string): string {
+    return text.split('').reverse().join('');
+  }
+
+  /**
    * פורמט טקסט למדפסת תרמית
    * קבלה בעברית עם תמיכה בתוכן בערבית
    */
@@ -162,7 +170,7 @@ class ThermalPrinterService {
     let lines: string[] = [];
     
     // כותרת ותאריך
-    lines.push(`קבלה / הזמנה #${order.id}`);
+    lines.push(this.reverseText(`קבלה / הזמנה #${order.id}`));
     const orderDate = new Date(order.created_at);
     const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()} ${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}`;
     lines.push(formattedDate);
@@ -171,43 +179,43 @@ class ThermalPrinterService {
     lines.push('------------------------------------');
     
     // פרטי לקוח - תווית בעברית בשורה נפרדת, תוכן (יכול להיות בערבית) בשורה הבאה
-    lines.push('שם לקוח:');
-    lines.push(order.customer_name);
-    lines.push('טלפון:');
-    lines.push(order.customer_phone);
+    lines.push(this.reverseText('שם לקוח:'));
+    lines.push(this.reverseText(order.customer_name));
+    lines.push(this.reverseText('טלפון:'));
+    lines.push(order.customer_phone); // מספרים לא צריכים היפוך
     if (order.customer_address) {
-      lines.push('כתובת:');
-      lines.push(order.customer_address);
+      lines.push(this.reverseText('כתובת:'));
+      lines.push(this.reverseText(order.customer_address));
     }
     
     // קו מפריד
     lines.push('------------------------------------');
     
     // כותרת פריטים
-    lines.push('פריטים');
+    lines.push(this.reverseText('פריטים'));
     
     // קו מפריד
     lines.push('------------------------------------');
     
     // פריטים
     order.items.forEach((item, index) => {
-      lines.push(`${item.name} × ${item.qty}`);
-      lines.push(`${Number(item.total).toFixed(2)} ₪`);
+      lines.push(this.reverseText(`${item.name} × ${item.qty}`));
+      lines.push(this.reverseText(`${Number(item.total).toFixed(2)} ₪`));
       
       // אפשרויות
       if (item.options?.choices && item.options.choices.length > 0) {
         item.options.choices.forEach((choice) => {
           const choiceItems = choice.items.map(i => i.name).join(', ');
           if (choiceItems) {
-            lines.push(`  ${choice.group}: ${choiceItems}`);
+            lines.push(this.reverseText(`  ${choice.group}: ${choiceItems}`));
           }
         });
       }
       
       // הערה לפריט
       if (item.options?.note) {
-        lines.push('  הערה:');
-        lines.push(`  ${item.options.note}`);
+        lines.push(this.reverseText('  הערה:'));
+        lines.push(this.reverseText(`  ${item.options.note}`));
       }
       
       // קו מפריד בין פריטים
@@ -220,9 +228,9 @@ class ThermalPrinterService {
     lines.push('------------------------------------');
     
     // סיכום
-    lines.push(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`);
-    lines.push(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`);
-    lines.push(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`);
+    lines.push(this.reverseText(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`));
+    lines.push(this.reverseText(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`));
+    lines.push(this.reverseText(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`));
     
     // קו מפריד
     lines.push('------------------------------------');
@@ -230,22 +238,22 @@ class ThermalPrinterService {
     // הערות
     if (order.notes) {
       lines.push('');
-      lines.push('הערות:');
-      lines.push(order.notes);
+      lines.push(this.reverseText('הערות:'));
+      lines.push(this.reverseText(order.notes));
     }
     
     // תשלום
     if (order.payment_method === 'card') {
       lines.push('');
-      lines.push('תשלום באשראי: שולם');
+      lines.push(this.reverseText('תשלום באשראי: שולם'));
     }
     
     // כותרת תחתונה
     lines.push('');
     if (settings.footer) {
-      lines.push(settings.footer);
+      lines.push(this.reverseText(settings.footer));
     } else {
-      lines.push('תודה רבה!');
+      lines.push(this.reverseText('תודה רבה!'));
     }
     lines.push('');
     lines.push('');
