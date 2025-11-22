@@ -131,103 +131,83 @@ class ThermalPrinterService {
    * תמיכה מלאה ב-RTL (Right-to-Left) לעברית
    */
   private formatReceiptText(order: Order): string {
-    // פונקציה להיפוך רק חלקים עבריים בטקסט
-    const reverseHebrew = (text: string): string => {
-      // בדיקה אם יש תווים עבריים בטקסט
-      const hasHebrew = /[\u0590-\u05FF]/.test(text);
-      
-      // אם אין עברית כלל - משאירים כמו שזה
-      if (!hasHebrew) {
-        return text;
-      }
-      
-      // אם כל הטקסט הוא עברית בלבד - הופכים הכל
-      const isOnlyHebrew = /^[\u0590-\u05FF\s:]+$/.test(text);
-      if (isOnlyHebrew) {
-        return text.split('').reverse().join('');
-      }
-      
-      // אם יש עירבוב של עברית עם שפות אחרות/מספרים - לא הופכים
-      return text;
-    };
-    
     let lines: string[] = [];
     
     // כותרת
     lines.push('====================');
-    lines.push(reverseHebrew(`הזמנה #${order.id}`));
+    lines.push(`הזמנה #${order.id}`);
     lines.push('====================');
     lines.push('');
     
     // פרטי לקוח
-    lines.push(reverseHebrew(`לקוח: ${order.customer_name}`));
+    lines.push(`לקוח: ${order.customer_name}`);
     if (order.customer_phone) {
-      lines.push(reverseHebrew(`טלפון: ${order.customer_phone}`));
+      lines.push(`טלפון: ${order.customer_phone}`);
     }
     if (order.customer_address) {
-      lines.push(reverseHebrew(`כתובת: ${order.customer_address}`));
+      lines.push(`כתובת: ${order.customer_address}`);
     }
     lines.push('');
     
     // פרטי הזמנה
     lines.push('--------------------');
-    lines.push(reverseHebrew('פריטים:'));
+    lines.push('פריטים:');
     lines.push('--------------------');
     
     // פריטים
     order.items.forEach((item) => {
-      lines.push(reverseHebrew(`${item.qty}x ${item.name}`));
+      lines.push(`${item.qty}x ${item.name}`);
       
       // אפשרויות
       if (item.options?.choices && item.options.choices.length > 0) {
         item.options.choices.forEach((choice) => {
-          lines.push(reverseHebrew(`  ${choice.group}:`));
+          lines.push(`  ${choice.group}:`);
           choice.items.forEach((subItem) => {
-            lines.push(reverseHebrew(`    + ${subItem.name}`));
+            lines.push(`    + ${subItem.name}`);
           });
         });
       }
       
       // הערה
       if (item.options?.note) {
-        lines.push(reverseHebrew(`  הערה: ${item.options.note}`));
+        lines.push(`  הערה: ${item.options.note}`);
       }
       
-      lines.push(reverseHebrew(`  ${item.total} ש"ח`));
+      lines.push(`  ${item.total} ש"ח`);
       lines.push('');
     });
     
     // סיכום
     lines.push('--------------------');
-    lines.push(reverseHebrew(`סכום ביניים: ${order.subtotal} ש"ח`));
+    lines.push(`סכום ביניים: ${order.subtotal} ש"ח`);
     if (order.delivery_fee > 0) {
-      lines.push(reverseHebrew(`דמי משלוח: ${order.delivery_fee} ש"ח`));
+      lines.push(`דמי משלוח: ${order.delivery_fee} ש"ח`);
     }
-    lines.push(reverseHebrew(`סה"כ: ${order.total} ש"ח`));
+    lines.push(`סה"כ: ${order.total} ש"ח`);
     lines.push('--------------------');
     lines.push('');
     
     // הערות
     if (order.notes) {
-      lines.push(reverseHebrew('הערות:'));
-      lines.push(reverseHebrew(order.notes));
+      lines.push('הערות:');
+      lines.push(order.notes);
       lines.push('');
     }
     
     // תשלום
     if (order.payment_method) {
       const paymentText = order.payment_method === 'cash' ? 'מזומן' : 'כרטיס אשראי';
-      lines.push(reverseHebrew(`אמצעי תשלום: ${paymentText}`));
+      lines.push(`אמצעי תשלום: ${paymentText}`);
     }
     
     // משלוח
     if (order.shipping_method) {
       const shippingText = order.shipping_method === 'delivery' ? 'משלוח' : 'איסוף עצמי';
-      lines.push(reverseHebrew(`אופן משלוח: ${shippingText}`));
+      lines.push(`אופן משלוח: ${shippingText}`);
     }
     
     lines.push('');
-    lines.push(reverseHebrew('תודה רבה!'));
+    lines.push('תודה רבה!');
     lines.push('');
     lines.push('');
     
