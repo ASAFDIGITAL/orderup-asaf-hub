@@ -159,24 +159,26 @@ class ThermalPrinterService {
    * קבלה בעברית עם תמיכה בתוכן בערבית
    */
   /**
-   * פורמט טקסט למדפסת תרמית - ללא שום היפוך
+   * פורמט טקסט למדפסת תרמית - בלי היפוך ידני של עברית/ערבית,
+   * רק סימון חלקים שמכילים מספרים כ-LTR כדי שלא יהפכו.
    */
   formatReceiptText(order: Order): string {
     const settings = this.getRestaurantSettings();
     let lines: string[] = [];
+    const LTR = "\u200E"; // סימן כיוון טקסט משמאל לימין (לא מודפס)
     
     // כותרת ותאריך
-    lines.push(`קבלה / הזמנה #${order.id}`);
+    lines.push(`קבלה / הזמנה #${LTR}${order.id}${LTR}`);
     const orderDate = new Date(order.created_at);
     const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()} ${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}`;
-    lines.push(formattedDate);
+    lines.push(`${LTR}${formattedDate}${LTR}`);
     
     // קו מפריד
     lines.push('------------------------------------');
     
     // פרטי לקוח
     lines.push(`לקוח: ${order.customer_name}`);
-    lines.push(`טלפון: ${order.customer_phone}`);
+    lines.push(`טלפון: ${LTR}${order.customer_phone}${LTR}`);
     if (order.customer_address) {
       lines.push(`כתובת: ${order.customer_address}`);
     }
@@ -192,8 +194,8 @@ class ThermalPrinterService {
     
     // פריטים
     order.items.forEach((item, index) => {
-      lines.push(`${item.name} × ${item.qty}`);
-      lines.push(`${Number(item.total).toFixed(2)} ₪`);
+      lines.push(`${item.name} × ${LTR}${item.qty}${LTR}`);
+      lines.push(`${LTR}${Number(item.total).toFixed(2)} ₪${LTR}`);
       
       // אפשרויות
       if (item.options && Array.isArray(item.options) && item.options.length > 0) {
@@ -235,9 +237,9 @@ class ThermalPrinterService {
     lines.push('------------------------------------');
     
     // סיכום
-    lines.push(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`);
-    lines.push(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`);
-    lines.push(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`);
+    lines.push(`ביניים                    ${LTR}${Number(order.subtotal).toFixed(2)} ₪${LTR}`);
+    lines.push(`משלוח                     ${LTR}${Number(order.delivery_fee).toFixed(2)} ₪${LTR}`);
+    lines.push(`סה"כ                      ${LTR}${Number(order.total).toFixed(2)} ₪${LTR}`);
     
     // קו מפריד
     lines.push('------------------------------------');
