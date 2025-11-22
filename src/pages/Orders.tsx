@@ -14,7 +14,6 @@ import OrderCard from "@/components/OrderCard";
 import OrderDetailsDialog from "@/components/OrderDetailsDialog";
 import PrinterSelectionDialog from "@/components/PrinterSelectionDialog";
 import RestaurantSettingsDialog from "@/components/RestaurantSettingsDialog";
-import { ReceiptPreviewDialog } from "@/components/ReceiptPreviewDialog";
 import { thermalPrinter } from "@/services/thermalPrinter";
 
 const Orders = () => {
@@ -32,8 +31,6 @@ const Orders = () => {
   const [isPrinterConnected, setIsPrinterConnected] = useState(false);
   const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
   const [isRestaurantSettingsOpen, setIsRestaurantSettingsOpen] = useState(false);
-  const [isReceiptPreviewOpen, setIsReceiptPreviewOpen] = useState(false);
-  const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [advancedFilters, setAdvancedFilters] = useState({
     minAmount: "",
@@ -252,11 +249,6 @@ const Orders = () => {
       console.error("Print error:", error);
       toast.error(`שגיאה בהדפסה: ${error instanceof Error ? error.message : 'שגיאה לא ידועה'}`, { id: `print-${order.id}` });
     }
-  };
-
-  const handlePreviewOrder = (order: Order) => {
-    setPreviewOrder(order);
-    setIsReceiptPreviewOpen(true);
   };
 
   const filterOrders = (status: string) => {
@@ -542,7 +534,6 @@ const Orders = () => {
                   order={order}
                   onViewDetails={setSelectedOrder}
                   onPrint={handlePrintOrder}
-                  onPreview={handlePreviewOrder}
                   getStatusColor={getStatusColor}
                   getStatusLabel={getStatusLabel}
                 />
@@ -563,7 +554,6 @@ const Orders = () => {
                   order={order}
                   onViewDetails={setSelectedOrder}
                   onPrint={handlePrintOrder}
-                  onPreview={handlePreviewOrder}
                   getStatusColor={getStatusColor}
                   getStatusLabel={getStatusLabel}
                 />
@@ -584,7 +574,6 @@ const Orders = () => {
                   order={order}
                   onViewDetails={setSelectedOrder}
                   onPrint={handlePrintOrder}
-                  onPreview={handlePreviewOrder}
                   getStatusColor={getStatusColor}
                   getStatusLabel={getStatusLabel}
                 />
@@ -623,15 +612,6 @@ const Orders = () => {
         open={isRestaurantSettingsOpen}
         onOpenChange={setIsRestaurantSettingsOpen}
       />
-
-      {/* Receipt Preview Dialog */}
-      {previewOrder && (
-        <ReceiptPreviewDialog
-          open={isReceiptPreviewOpen}
-          onOpenChange={setIsReceiptPreviewOpen}
-          order={previewOrder}
-        />
-      )}
     </div>
   );
 };
