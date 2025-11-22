@@ -161,27 +161,30 @@ class ThermalPrinterService {
     const settings = this.getRestaurantSettings();
     let lines: string[] = [];
     
+    // Unicode direction markers
+    const RLM = '\u200F'; // Right-to-Left Mark
+    
     // כותרת ותאריך
-    lines.push(`קבלה / הזמנה #${order.id}`);
+    lines.push(`${RLM}קבלה / הזמנה #${order.id}`);
     const orderDate = new Date(order.created_at);
-    const formattedDate = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')} ${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()}`;
+    const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()} ${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}`;
     lines.push(formattedDate);
     
     // קו מפריד
     lines.push('------------------------------------');
     
     // פרטי לקוח
-    lines.push(`לקוח: ${order.customer_name}`);
-    lines.push(`טלפון: ${order.customer_phone}`);
+    lines.push(`${RLM}לקוח: ${order.customer_name}`);
+    lines.push(`${RLM}טלפון: ${order.customer_phone}`);
     if (order.customer_address) {
-      lines.push(`כתובת: ${order.customer_address}`);
+      lines.push(`${RLM}כתובת: ${order.customer_address}`);
     }
     
     // קו מפריד
     lines.push('------------------------------------');
     
     // כותרת פריטים
-    lines.push('פריטים');
+    lines.push(`${RLM}פריטים`);
     
     // קו מפריד
     lines.push('------------------------------------');
@@ -203,7 +206,7 @@ class ThermalPrinterService {
       
       // הערה לפריט
       if (item.options?.note) {
-        lines.push(`  הערה: ${item.options.note}`);
+        lines.push(`  ${RLM}הערה: ${item.options.note}`);
       }
       
       // קו מפריד בין פריטים
@@ -216,9 +219,9 @@ class ThermalPrinterService {
     lines.push('------------------------------------');
     
     // סיכום
-    lines.push(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`);
-    lines.push(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`);
-    lines.push(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`);
+    lines.push(`${RLM}ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`);
+    lines.push(`${RLM}משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`);
+    lines.push(`${RLM}סה"כ                      ${Number(order.total).toFixed(2)} ₪`);
     
     // קו מפריד
     lines.push('------------------------------------');
@@ -226,14 +229,14 @@ class ThermalPrinterService {
     // הערות
     if (order.notes) {
       lines.push('');
-      lines.push('הערות');
+      lines.push(`${RLM}הערות`);
       lines.push(order.notes);
     }
     
     // תשלום
     if (order.payment_method === 'card') {
       lines.push('');
-      lines.push('תשלום באשראי: שולם');
+      lines.push(`${RLM}תשלום באשראי: שולם`);
     }
     
     // כותרת תחתונה
