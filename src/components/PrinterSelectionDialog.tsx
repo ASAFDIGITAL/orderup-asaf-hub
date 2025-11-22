@@ -29,6 +29,8 @@ export default function PrinterSelectionDialog({
   const [isScanning, setIsScanning] = useState(false);
   const [printers, setPrinters] = useState<PrinterDevice[]>([]);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [manualAddress, setManualAddress] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
 
   const handleScan = async () => {
     setIsScanning(true);
@@ -49,14 +51,14 @@ export default function PrinterSelectionDialog({
     }
   };
 
-  const handleConnect = async (address: string, name: string) => {
+  const handleConnect = async (address: string, name?: string) => {
     setIsConnecting(true);
     
     try {
-      toast.loading(`מתחבר ל-${name}...`, { id: 'connect' });
+      toast.loading(`מתחבר${name ? ` ל-${name}` : ''}...`, { id: 'connect' });
       await thermalPrinter.connectToPrinter(address);
       
-      toast.success(`מחובר ל-${name}`, { id: 'connect' });
+      toast.success(`מחובר${name ? ` ל-${name}` : ' בהצלחה'}`, { id: 'connect' });
       onConnected();
       onOpenChange(false);
     } catch (error) {
@@ -78,24 +80,67 @@ export default function PrinterSelectionDialog({
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <Button
-            onClick={handleScan}
-            disabled={isScanning}
-            className="w-full"
-            variant="outline"
-          >
-            {isScanning ? (
-              <>
-                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                מחפש מדפסות...
-              </>
-            ) : (
-              <>
-                <Bluetooth className="ml-2 h-4 w-4" />
-                סרוק מדפסות
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleScan}
+              disabled={isScanning}
+              variant="outline"
+              className="flex-1"
+            >
+              {isScanning ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  מחפש...
+                </>
+              ) : (
+                <>
+                  <Bluetooth className="ml-2 h-4 w-4" />
+                  סרוק
+                </>
+              )}
+            </Button>
+            
+            <Button
+              onClick={() => setShowManualInput(!showManualInput)}
+              variant="outline"
+              className="flex-1"
+            >
+              חיבור ידני
+            </Button>
+          </div>
+
+          {showManualInput && (
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+              <label className="text-sm font-medium block">
+                כתובת MAC של המדפסת:
+              </label>
+              <input
+                type="text"
+                value={manualAddress}
+                onChange={(e) => setManualAddress(e.target.value)}
+                placeholder="00:AA:11:BB:22:CC"
+                className="w-full px-3 py-2 border rounded-md bg-background text-center font-mono"
+                dir="ltr"
+              />
+              <Button
+                onClick={() => handleConnect(manualAddress)}
+                disabled={isConnecting || !manualAddress}
+                className="w-full"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    מתחבר...
+                  </>
+                ) : (
+                  'התחבר למדפסת'
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                לדוגמה: 00:AA:11:BB:22:CC
+              </p>
+            </div>
+          )}
 
           {printers.length > 0 && (
             <div className="space-y-2">
@@ -114,7 +159,7 @@ export default function PrinterSelectionDialog({
                     <Printer className="ml-2 h-4 w-4" />
                     <div className="flex-1 text-right">
                       <div className="font-medium">{printer.name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground font-mono">
                         {printer.address}
                       </div>
                     </div>
@@ -124,10 +169,10 @@ export default function PrinterSelectionDialog({
             </div>
           )}
 
-          {!isScanning && printers.length === 0 && (
+          {!isScanning && printers.length === 0 && !showManualInput && (
             <div className="text-center py-8 text-muted-foreground">
               <Bluetooth className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">לחץ על 'סרוק מדפסות' למציאת מדפסות זמינות</p>
+              <p className="text-sm">לחץ על 'סרוק' או 'חיבור ידני'</p>
             </div>
           )}
         </div>
