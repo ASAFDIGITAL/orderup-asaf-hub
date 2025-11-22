@@ -168,108 +168,127 @@ class ThermalPrinterService {
   private formatReceiptText(order: Order): string {
     const settings = this.getRestaurantSettings();
     let lines: string[] = [];
+
+    // פונקציה פנימית שמחליטה מתי להפוך טקסט
+    const pushLine = (text: string) => {
+      const hasArabic = /[\u0600-\u06FF]/.test(text);
+      const hasHebrew = /[\u0590-\u05FF]/.test(text);
+
+      // אם יש ערבית – לא הופכים בכלל (גם אם יש עברית יחד)
+      if (hasArabic) {
+        lines.push(text);
+        return;
+      }
+
+      // אם יש רק עברית בלי ערבית – הופכים כדי שהמדפסת תראה נכון
+      if (hasHebrew) {
+        lines.push(this.reverseText(text));
+        return;
+      }
+
+      // אנגלית/מספרים – כרגיל
+      lines.push(text);
+    };
     
     // כותרת ותאריך
-    lines.push(`קבלה / הזמנה #${order.id}`);
+    pushLine(`קבלה / הזמנה #${order.id}`);
     const orderDate = new Date(order.created_at);
     const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()} ${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}`;
-    lines.push(formattedDate);
+    pushLine(formattedDate);
     
     // קו מפריד
-    lines.push('------------------------------------');
+    pushLine('------------------------------------');
     
-    // פרטי לקוח - בלי היפוך, עברית וערבית באותו כיוון (RTL)
-    lines.push(`לקוח: ${order.customer_name}`);
-    lines.push(`טלפון: ${order.customer_phone}`);
+    // פרטי לקוח – יכול להיות עברית/ערבית מעורב, לכן לא מפצלים
+    pushLine(`לקוח: ${order.customer_name}`);
+    pushLine(`טלפון: ${order.customer_phone}`);
     if (order.customer_address) {
-      lines.push(`כתובת: ${order.customer_address}`);
+      pushLine(`כתובת: ${order.customer_address}`);
     }
     
     // קו מפריד
-    lines.push('------------------------------------');
+    pushLine('------------------------------------');
     
     // כותרת פריטים
-    lines.push('פריטים');
+    pushLine('פריטים');
     
     // קו מפריד
-    lines.push('------------------------------------');
+    pushLine('------------------------------------');
     
     // פריטים
     order.items.forEach((item, index) => {
-      lines.push(`${item.name} × ${item.qty}`);
-      lines.push(`${Number(item.total).toFixed(2)} ₪`);
+      pushLine(`${item.name} × ${item.qty}`);
+      pushLine(`${Number(item.total).toFixed(2)} ₪`);
       
-      // אפשרויות
+      // אפשרויות – תומך גם במבנה הישן (מערך) וגם בחדש (אובייקט)
       if (item.options && Array.isArray(item.options) && item.options.length > 0) {
-        // במקרה הישן שבו options הוא מערך
         item.options.forEach((opt: any) => {
           if (opt?.choices && Array.isArray(opt.choices)) {
             opt.choices.forEach((choice: any) => {
               const choiceItems = choice.items.map((i: any) => i.name).join(', ');
               if (choiceItems) {
-                lines.push(`  ${choice.group}: ${choiceItems}`);
+                pushLine(`  ${choice.group}: ${choiceItems}`);
               }
             });
           }
           if (opt?.note) {
-            lines.push(`  הערה: ${opt.note}`);
+            pushLine(`  הערה: ${opt.note}`);
           }
         });
       } else if (item.options && !Array.isArray(item.options)) {
-        // במקרה החדש שבו options הוא אובייקט
         const opt = item.options as any;
         if (opt.choices && Array.isArray(opt.choices)) {
           opt.choices.forEach((choice: any) => {
             const choiceItems = choice.items.map((i: any) => i.name).join(', ');
             if (choiceItems) {
-              lines.push(`  ${choice.group}: ${choiceItems}`);
+              pushLine(`  ${choice.group}: ${choiceItems}`);
             }
           });
         }
         if (opt.note) {
-          lines.push(`  הערה: ${opt.note}`);
+          pushLine(`  הערה: ${opt.note}`);
         }
       }
       
       // קו מפריד בין פריטים
       if (index < order.items.length - 1) {
-        lines.push('------------------------------------');
+        pushLine('------------------------------------');
       }
     });
     
     // קו מפריד לפני סיכום
-    lines.push('------------------------------------');
+    pushLine('------------------------------------');
     
     // סיכום
-    lines.push(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`);
-    lines.push(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`);
-    lines.push(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`);
+    pushLine(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`);
+    pushLine(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`);
+    pushLine(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`);
     
     // קו מפריד
-    lines.push('------------------------------------');
+    pushLine('------------------------------------');
     
     // הערות
     if (order.notes) {
-      lines.push('');
-      lines.push('הערות');
-      lines.push(order.notes);
+      pushLine('');
+      pushLine('הערות');
+      pushLine(order.notes);
     }
     
     // תשלום
     if (order.payment_method === 'card') {
-      lines.push('');
-      lines.push('תשלום באשראי: שולם');
+      pushLine('');
+      pushLine('תשלום באשראי: שולם');
     }
     
     // כותרת תחתונה
-    lines.push('');
+    pushLine('');
     if (settings.footer) {
-      lines.push(settings.footer);
+      pushLine(settings.footer);
     } else {
-      lines.push('תודה רבה!');
+      pushLine('תודה רבה!');
     }
-    lines.push('');
-    lines.push('');
+    pushLine('');
+    pushLine('');
     
     return lines.join('\n');
   }
