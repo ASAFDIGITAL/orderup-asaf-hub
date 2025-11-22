@@ -154,24 +154,11 @@ class ThermalPrinterService {
   }
 
   /**
-   * זיהוי שפה (עברית או ערבית)
-   */
-  private detectLanguage(text: string): 'he' | 'ar' | 'mixed' {
-    const hasHebrew = /[\u0590-\u05FF]/.test(text);
-    const hasArabic = /[\u0600-\u06FF]/.test(text);
-    
-    if (hasHebrew && !hasArabic) return 'he';
-    if (hasArabic && !hasHebrew) return 'ar';
-    return 'mixed';
-  }
-
-  /**
    * פורמט טקסט למדפסת תרמית
-   * תמיכה מלאה ב-RTL (Right-to-Left) לעברית וערבית
+   * תמיכה דו-לשונית - עברית וערבית בכל כותרת
    */
   private formatReceiptText(order: Order): string {
     const settings = this.getRestaurantSettings();
-    const orderLang = this.detectLanguage(order.customer_name);
     let lines: string[] = [];
     
     // לוגו (אם קיים - נשאיר מקום)
@@ -181,16 +168,14 @@ class ThermalPrinterService {
       lines.push('');
     }
     
-    // שם מסעדה
-    if (orderLang === 'ar' && settings.nameAr) {
-      lines.push('====================');
-      lines.push(settings.nameAr);
-      lines.push('====================');
+    // שם מסעדה - דו-לשוני
+    lines.push('====================');
+    if (settings.nameAr) {
+      lines.push(`${settings.name} / ${settings.nameAr}`);
     } else {
-      lines.push('====================');
       lines.push(settings.name);
-      lines.push('====================');
     }
+    lines.push('====================');
     
     // פרטי מסעדה
     if (settings.address || settings.phone) {
@@ -201,31 +186,25 @@ class ThermalPrinterService {
     
     lines.push('');
     
-    // מספר הזמנה
-    const orderLabel = orderLang === 'ar' ? 'طلب رقم' : 'הזמנה';
+    // מספר הזמנה - דו-לשוני
     lines.push('--------------------');
-    lines.push(`${orderLabel} #${order.id}`);
+    lines.push(`הזמנה מספר / طلب رقم #${order.id}`);
     lines.push('--------------------');
     lines.push('');
     
-    // פרטי לקוח
-    const customerLabel = orderLang === 'ar' ? 'العميل' : 'לקוח';
-    const phoneLabel = orderLang === 'ar' ? 'الهاتف' : 'טלפון';
-    const addressLabel = orderLang === 'ar' ? 'العنوان' : 'כתובת';
-    
-    lines.push(`${customerLabel}: ${order.customer_name}`);
+    // פרטי לקוח - דו-לשוני
+    lines.push(`שם הלקוח / العميل: ${order.customer_name}`);
     if (order.customer_phone) {
-      lines.push(`${phoneLabel}: ${order.customer_phone}`);
+      lines.push(`מספר טלפון / الهاتف: ${order.customer_phone}`);
     }
     if (order.customer_address) {
-      lines.push(`${addressLabel}: ${order.customer_address}`);
+      lines.push(`כתובת / العنوان: ${order.customer_address}`);
     }
     lines.push('');
     
-    // פרטי הזמנה
-    const itemsLabel = orderLang === 'ar' ? 'العناصر' : 'פריטים';
+    // פרטי הזמנה - דו-לשוני
     lines.push('--------------------');
-    lines.push(`${itemsLabel}:`);
+    lines.push('פרטי ההזמנה / تفاصيل الطلب:');
     lines.push('--------------------');
     
     // פריטים
@@ -251,52 +230,48 @@ class ThermalPrinterService {
       lines.push('');
     });
     
-    // סיכום
-    const subtotalLabel = orderLang === 'ar' ? 'المجموع الفرعي' : 'סכום ביניים';
-    const deliveryLabel = orderLang === 'ar' ? 'توصيل' : 'דמי משלוח';
-    const totalLabel = orderLang === 'ar' ? 'الإجمالي' : 'סה"כ';
-    
+    // סיכום - דו-לשוני
     lines.push('--------------------');
-    lines.push(`${subtotalLabel}: ${order.subtotal} ₪`);
+    lines.push(`סכום ביניים / المجموع الفرعي: ${order.subtotal} ₪`);
     if (order.delivery_fee > 0) {
-      lines.push(`${deliveryLabel}: ${order.delivery_fee} ₪`);
+      lines.push(`משלוח / توصيل: ${order.delivery_fee} ₪`);
     }
-    lines.push(`${totalLabel}: ${order.total} ₪`);
+    lines.push(`סה"כ / الإجمالي: ${order.total} ₪`);
     lines.push('--------------------');
     lines.push('');
     
-    // הערות
+    // הערות - דו-לשוני
     if (order.notes) {
-      const notesLabel = orderLang === 'ar' ? 'ملاحظات' : 'הערות';
-      lines.push(`${notesLabel}:`);
+      lines.push('הערות / ملاحظات:');
       lines.push(order.notes);
       lines.push('');
     }
     
-    // תשלום
+    // תשלום - דו-לשוני
     if (order.payment_method) {
-      const paymentLabel = orderLang === 'ar' ? 'طريقة الدفع' : 'אמצעי תשלום';
       const paymentText = order.payment_method === 'cash' 
-        ? (orderLang === 'ar' ? 'نقداً' : 'מזומן')
-        : (orderLang === 'ar' ? 'بطاقة' : 'כרטיס אשראי');
-      lines.push(`${paymentLabel}: ${paymentText}`);
+        ? 'מזומן / نقداً'
+        : 'כרטיס אשראי / بطاقة';
+      lines.push(`אמצעי תשלום / طريقة الدفع: ${paymentText}`);
     }
     
-    // משלוח
+    // משלוח - דו-לשוני
     if (order.shipping_method) {
-      const shippingLabel = orderLang === 'ar' ? 'طريقة التوصيل' : 'אופן משלוח';
       const shippingText = order.shipping_method === 'delivery'
-        ? (orderLang === 'ar' ? 'توصيل' : 'משלוח')
-        : (orderLang === 'ar' ? 'استلام ذاتي' : 'איסוף עצמי');
-      lines.push(`${shippingLabel}: ${shippingText}`);
+        ? 'משלוח / توصيل'
+        : 'איסוף עצמי / استلام ذاتي';
+      lines.push(`אופן משלוח / طريقة التوصيל: ${shippingText}`);
     }
     
-    // כותרת תחתונה מותאמת אישית
+    // כותרת תחתונה - דו-לשוני
     lines.push('');
-    const footer = orderLang === 'ar' && settings.footerAr 
-      ? settings.footerAr 
-      : settings.footer || 'תודה רבה!';
-    lines.push(footer);
+    if (settings.footer && settings.footerAr) {
+      lines.push(`${settings.footer} / ${settings.footerAr}`);
+    } else if (settings.footer) {
+      lines.push(settings.footer);
+    } else {
+      lines.push('תודה רבה! / شكراً جزيلاً!');
+    }
     lines.push('');
     lines.push('');
     
