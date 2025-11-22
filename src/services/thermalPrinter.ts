@@ -155,122 +155,93 @@ class ThermalPrinterService {
 
   /**
    * פורמט טקסט למדפסת תרמית
-   * תמיכה דו-לשונית - עברית וערבית בכל כותרת
+   * קבלה בעברית עם תמיכה בתוכן בערבית
    */
   private formatReceiptText(order: Order): string {
     const settings = this.getRestaurantSettings();
     let lines: string[] = [];
     
-    // לוגו (אם קיים - נשאיר מקום)
-    if (settings.logoUrl) {
-      lines.push('');
-      lines.push('[LOGO]');
-      lines.push('');
-    }
+    // כותרת ותאריך
+    lines.push(`קבלה / הזמנה #${order.id}`);
+    const orderDate = new Date(order.created_at);
+    const formattedDate = `${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')} ${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()}`;
+    lines.push(formattedDate);
     
-    // שם מסעדה - דו-לשוני
-    lines.push('====================');
-    if (settings.nameAr) {
-      lines.push(`${settings.name} / ${settings.nameAr}`);
-    } else {
-      lines.push(settings.name);
-    }
-    lines.push('====================');
+    // קו מפריד
+    lines.push('------------------------------------');
     
-    // פרטי מסעדה
-    if (settings.address || settings.phone) {
-      lines.push('');
-      if (settings.address) lines.push(settings.address);
-      if (settings.phone) lines.push(settings.phone);
-    }
-    
-    lines.push('');
-    
-    // מספר הזמנה - דו-לשוני
-    lines.push('--------------------');
-    lines.push(`הזמנה מספר / طلب رقم #${order.id}`);
-    lines.push('--------------------');
-    lines.push('');
-    
-    // פרטי לקוח - דו-לשוני
-    lines.push(`שם הלקוח / العميل: ${order.customer_name}`);
-    if (order.customer_phone) {
-      lines.push(`מספר טלפון / الهاتف: ${order.customer_phone}`);
-    }
+    // פרטי לקוח
+    lines.push(`לקוח: ${order.customer_name}`);
+    lines.push(`טלפון: ${order.customer_phone}`);
     if (order.customer_address) {
-      lines.push(`כתובת / العنوان: ${order.customer_address}`);
+      lines.push(`כתובת: ${order.customer_address}`);
     }
-    lines.push('');
     
-    // פרטי הזמנה - דו-לשוני
-    lines.push('--------------------');
-    lines.push('פרטי ההזמנה / تفاصيل الطلب:');
-    lines.push('--------------------');
+    // קו מפריד
+    lines.push('------------------------------------');
+    
+    // כותרת פריטים
+    lines.push('פריטים');
+    
+    // קו מפריד
+    lines.push('------------------------------------');
     
     // פריטים
-    order.items.forEach((item) => {
-      lines.push(`${item.qty}x ${item.name}`);
+    order.items.forEach((item, index) => {
+      lines.push(`${item.name} × ${item.qty}`);
+      lines.push(`${item.total.toFixed(2)} ₪`);
       
       // אפשרויות
       if (item.options?.choices && item.options.choices.length > 0) {
         item.options.choices.forEach((choice) => {
-          lines.push(`  ${choice.group}:`);
-          choice.items.forEach((subItem) => {
-            lines.push(`    + ${subItem.name}`);
-          });
+          const choiceItems = choice.items.map(i => i.name).join(', ');
+          if (choiceItems) {
+            lines.push(`  ${choice.group}: ${choiceItems}`);
+          }
         });
       }
       
-      // הערה
+      // הערה לפריט
       if (item.options?.note) {
         lines.push(`  הערה: ${item.options.note}`);
       }
       
-      lines.push(`  ${item.total} ש"ח`);
-      lines.push('');
+      // קו מפריד בין פריטים
+      if (index < order.items.length - 1) {
+        lines.push('------------------------------------');
+      }
     });
     
-    // סיכום - דו-לשוני
-    lines.push('--------------------');
-    lines.push(`סכום ביניים / المجموع الفرعي: ${order.subtotal} ₪`);
-    if (order.delivery_fee > 0) {
-      lines.push(`משלוח / توصيل: ${order.delivery_fee} ₪`);
-    }
-    lines.push(`סה"כ / الإجمالي: ${order.total} ₪`);
-    lines.push('--------------------');
-    lines.push('');
+    // קו מפריד לפני סיכום
+    lines.push('------------------------------------');
     
-    // הערות - דו-לשוני
+    // סיכום
+    lines.push(`ביניים                    ${order.subtotal.toFixed(2)} ₪`);
+    lines.push(`משלוח                     ${order.delivery_fee.toFixed(2)} ₪`);
+    lines.push(`סה"כ                      ${order.total.toFixed(2)} ₪`);
+    
+    // קו מפריד
+    lines.push('------------------------------------');
+    
+    // הערות
     if (order.notes) {
-      lines.push('הערות / ملاحظات:');
-      lines.push(order.notes);
       lines.push('');
+      lines.push('הערות');
+      lines.push(order.notes);
     }
     
-    // תשלום - דו-לשוני
-    if (order.payment_method) {
-      const paymentText = order.payment_method === 'cash' 
-        ? 'מזומן / نقداً'
-        : 'כרטיס אשראי / بطاقة';
-      lines.push(`אמצעי תשלום / طريقة الدفع: ${paymentText}`);
+    // תשלום
+    if (order.payment_method === 'card') {
+      lines.push('');
+      lines.push('תשלום באשראי: שולם');
     }
     
-    // משלוח - דו-לשוני
-    if (order.shipping_method) {
-      const shippingText = order.shipping_method === 'delivery'
-        ? 'משלוח / توصيل'
-        : 'איסוף עצמי / استلام ذاتي';
-      lines.push(`אופן משלוח / طريقة التوصيל: ${shippingText}`);
-    }
-    
-    // כותרת תחתונה - דו-לשוני
+    // כותרת תחתונה
     lines.push('');
-    if (settings.footer && settings.footerAr) {
-      lines.push(`${settings.footer} / ${settings.footerAr}`);
-    } else if (settings.footer) {
+    if (settings.footer) {
       lines.push(settings.footer);
     } else {
-      lines.push('תודה רבה! / شكراً جزيلاً!');
+      lines.push('תודה רבה!');
     }
     lines.push('');
     lines.push('');
