@@ -189,7 +189,7 @@ class ThermalPrinterService {
     // פריטים
     order.items.forEach((item, index) => {
       lines.push(`${item.name} × ${item.qty}`);
-      lines.push(`${item.total.toFixed(2)} ₪`);
+      lines.push(`${Number(item.total).toFixed(2)} ₪`);
       
       // אפשרויות
       if (item.options?.choices && item.options.choices.length > 0) {
@@ -216,9 +216,9 @@ class ThermalPrinterService {
     lines.push('------------------------------------');
     
     // סיכום
-    lines.push(`ביניים                    ${order.subtotal.toFixed(2)} ₪`);
-    lines.push(`משלוח                     ${order.delivery_fee.toFixed(2)} ₪`);
-    lines.push(`סה"כ                      ${order.total.toFixed(2)} ₪`);
+    lines.push(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`);
+    lines.push(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`);
+    lines.push(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`);
     
     // קו מפריד
     lines.push('------------------------------------');
