@@ -21,36 +21,55 @@ class ThermalPrinterService {
    */
   async scanForPrinters(): Promise<any[]> {
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
         const discoveredDevices: any[] = [];
         
-        // האזנה למכשירים שנמצאו
-        CapacitorThermalPrinter.addListener('discoverDevices', (devices) => {
-          console.log('מכשירים שנמצאו:', devices);
-          discoveredDevices.push(...devices.devices);
+        // הוסף listener לפני שמתחילים את הסריקה
+        const listenerHandle = await CapacitorThermalPrinter.addListener('discoverDevices', (devices) => {
+          console.log('🔍 מכשירים שנמצאו:', devices);
+          if (devices && devices.devices) {
+            discoveredDevices.push(...devices.devices);
+            console.log('✅ סה"כ מכשירים:', discoveredDevices.length);
+          }
         });
+        
+        console.log('📡 Listener נוסף בהצלחה');
 
-        // התחל סריקה
-        CapacitorThermalPrinter.startScan()
-          .then(() => {
-            console.log('סריקה החלה...');
-            
-            // חכה 5 שניות ואז עצור את הסריקה
-            setTimeout(async () => {
-              await CapacitorThermalPrinter.stopScan();
+        // המתן רגע לוודא שה-listener מוכן
+        setTimeout(() => {
+          // התחל סריקה
+          CapacitorThermalPrinter.startScan()
+            .then(() => {
+              console.log('🔎 סריקה החלה...');
               
-              if (discoveredDevices.length === 0) {
-                reject(new Error('לא נמצאו מדפסות. ודא שהמדפסת דלוקה וקרובה.'));
-                return;
-              }
+              // חכה 8 שניות ואז עצור את הסריקה
+              setTimeout(async () => {
+                try {
+                  await CapacitorThermalPrinter.stopScan();
+                  console.log('⏹️ סריקה הופסקה');
+                  
+                  // הסר את ה-listener
+                  await listenerHandle.remove();
+                  
+                  if (discoveredDevices.length === 0) {
+                    reject(new Error('לא נמצאו מדפסות Bluetooth. נסה לחבר ידנית לפי כתובת MAC.'));
+                    return;
+                  }
 
-              resolve(discoveredDevices);
-            }, 5000);
-          })
-          .catch((error) => {
-            console.error('שגיאה בסריקה:', error);
-            reject(error);
-          });
+                  resolve(discoveredDevices);
+                } catch (stopError) {
+                  console.error('שגיאה בעצירת סריקה:', stopError);
+                  await listenerHandle.remove();
+                  resolve(discoveredDevices); // החזר את מה שנמצא גם אם יש שגיאה בעצירה
+                }
+              }, 8000);
+            })
+            .catch(async (error) => {
+              console.error('❌ שגיאה בסריקה:', error);
+              await listenerHandle.remove();
+              reject(error);
+            });
+        }, 300);
       });
     } catch (error) {
       console.error('Failed to scan for printers:', error);
