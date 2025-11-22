@@ -162,19 +162,36 @@ class ThermalPrinterService {
   }
 
   /**
-   * טיפול בטקסט מעורב עברית-ערבית
-   * מזהה תווים ערביים ומטפל בכל חלק בנפרד
+   * פיצול הערות מעורבות לשורות "פשוטות" למדפסת
+   * לא הופך טקסט כדי לא לשבור ערבית/עברית מעורבים
    */
-  private handleMixedText(text: string): string {
-    const arabicRegex = /[\u0600-\u06FF]/;
-    
-    // אם אין תווים ערביים, פשוט הפוך הכל
-    if (!arabicRegex.test(text)) {
-      return this.reverseText(text);
-    }
-    
-    // אם יש תווים ערביים, הפוך את כל הטקסט (כי גם ערבית וגם עברית RTL)
-    return this.reverseText(text);
+  private handleMixedText(text: string): string[] {
+    const result: string[] = [];
+
+    // כל שורה לוגית (אם יש \n)
+    const logicalLines = text.split('\n');
+
+    logicalLines.forEach(rawLine => {
+      const line = rawLine.trim();
+      if (!line) return;
+
+      // אם יש מפריד | נחלק לשניים/יותר
+      if (line.includes('|')) {
+        const parts = line.split('|')
+          .map(p => p.trim())
+          .filter(Boolean);
+
+        parts.forEach(p => {
+          // כאן בכוונה לא עושים reverse – כדי לא לשבור ערבית
+          result.push(p);
+        });
+      } else {
+        // שורה רגילה – משאירים כמו שהיא
+        result.push(line);
+      }
+    });
+
+    return result;
   }
 
   /**
@@ -267,8 +284,9 @@ class ThermalPrinterService {
     if (order.notes) {
       lines.push('');
       lines.push(this.reverseText('הערות'));
-      // הפוך את כל הטקסט ביחד (כולל | אם יש) כי גם עברית וגם ערבית RTL
-      lines.push(this.handleMixedText(order.notes));
+      
+      const noteLines = this.handleMixedText(order.notes);
+      noteLines.forEach(l => lines.push(l));
     }
     
     // תשלום
