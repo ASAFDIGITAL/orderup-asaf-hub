@@ -116,8 +116,17 @@ class ThermalPrinterService {
    * תמיכה מלאה ב-RTL (Right-to-Left) לעברית
    */
   private formatReceiptText(order: Order): string {
-    // פונקציה להיפוך טקסט עברית למדפסת
+    // פונקציה להיפוך רק טקסט עברית (לא ערבית או מספרים)
     const reverseHebrew = (text: string): string => {
+      // בדיקה אם יש עברית בטקסט
+      const hasHebrew = /[\u0590-\u05FF]/.test(text);
+      
+      // אם אין עברית, מחזירים כמו שהוא
+      if (!hasHebrew) {
+        return text;
+      }
+      
+      // אם יש עברית, הופכים רק את התווים העבריים
       return text.split('').reverse().join('');
     };
     
