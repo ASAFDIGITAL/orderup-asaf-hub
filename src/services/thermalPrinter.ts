@@ -155,12 +155,15 @@ class ThermalPrinterService {
 
 
   /**
+   * היפוך טקסט עברי בלבד
+   */
+  private reverseText(text: string): string {
+    return Array.from(text).reverse().join('');
+  }
+
+  /**
    * פורמט טקסט למדפסת תרמית
    * קבלה בעברית עם תמיכה בתוכן בערבית
-   */
-  /**
-   * פורמט טקסט למדפסת תרמית - בלי היפוך ידני של עברית/ערבית,
-   * רק סימון חלקים שמכילים מספרים כ-LTR כדי שלא יהפכו.
    */
   formatReceiptText(order: Order): string {
     const settings = this.getRestaurantSettings();
@@ -168,13 +171,13 @@ class ThermalPrinterService {
     const LTR = "\u200E"; // סימן כיוון טקסט משמאל לימין (לא מודפס)
     
     // כותרת ותאריך
-    lines.push(`קבלה / הזמנה #${LTR}${order.id}${LTR}`);
+    lines.push(this.reverseText(`קבלה / הזמנה #${LTR}${order.id}${LTR}`));
     const orderDate = new Date(order.created_at);
     const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()} ${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}`;
     lines.push(`${LTR}${formattedDate}${LTR}`);
     
     // קו מפריד
-    lines.push('------------------------------------');
+    lines.push('-----------------------------');
     
     // פרטי לקוח
     lines.push(`לקוח: ${order.customer_name}`);
@@ -184,13 +187,13 @@ class ThermalPrinterService {
     }
     
     // קו מפריד
-    lines.push('------------------------------------');
+    lines.push('-----------------------------');
     
     // כותרת פריטים
-    lines.push('פריטים');
+    lines.push(this.reverseText('פריטים'));
     
     // קו מפריד
-    lines.push('------------------------------------');
+    lines.push('-----------------------------');
     
     // פריטים
     order.items.forEach((item, index) => {
@@ -229,20 +232,20 @@ class ThermalPrinterService {
       
       // קו מפריד בין פריטים
       if (index < order.items.length - 1) {
-        lines.push('------------------------------------');
+        lines.push('-----------------------------');
       }
     });
     
     // קו מפריד לפני סיכום
-    lines.push('------------------------------------');
+    lines.push('-----------------------------');
     
     // סיכום
-    lines.push(`ביניים                    ${LTR}${Number(order.subtotal).toFixed(2)} ₪${LTR}`);
-    lines.push(`משלוח                     ${LTR}${Number(order.delivery_fee).toFixed(2)} ₪${LTR}`);
-    lines.push(`סה"כ                      ${LTR}${Number(order.total).toFixed(2)} ₪${LTR}`);
+    lines.push(`${this.reverseText('ביניים')}                    ${LTR}${Number(order.subtotal).toFixed(2)} ₪${LTR}`);
+    lines.push(`${this.reverseText('משלוח')}                     ${LTR}${Number(order.delivery_fee).toFixed(2)} ₪${LTR}`);
+    lines.push(`${this.reverseText('סה"כ')}                      ${LTR}${Number(order.total).toFixed(2)} ₪${LTR}`);
     
     // קו מפריד
-    lines.push('------------------------------------');
+    lines.push('-----------------------------');
     
     // הערות
     if (order.notes) {
@@ -262,7 +265,7 @@ class ThermalPrinterService {
     if (settings.footer) {
       lines.push(settings.footer);
     } else {
-      lines.push('תודה רבה!');
+      lines.push(this.reverseText('תודה רבה!'));
     }
     lines.push('');
     lines.push('');
