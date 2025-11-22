@@ -253,20 +253,7 @@ const Orders = () => {
   };
 
   const filterOrders = (status: string) => {
-    let filtered = orders;
-    
-    // אם זה טאב "הכל" - נציג רק הזמנות מהיום
-    if (status === "all") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      filtered = orders.filter((order) => {
-        const orderDate = new Date(order.created_at);
-        orderDate.setHours(0, 0, 0, 0);
-        return orderDate.getTime() === today.getTime();
-      });
-    } else {
-      filtered = orders.filter((order) => order.status === status);
-    }
+    let filtered = status === "all" ? orders : orders.filter((order) => order.status === status);
     
     // חיפוש טקסט
     if (searchQuery.trim()) {
@@ -340,14 +327,16 @@ const Orders = () => {
 
   const newOrders = filterOrders("new");
   const preparingOrders = filterOrders("preparing");
-  const allTodayOrders = filterOrders("all");
+  const allOrders = filterOrders("all");
   
-  // חישוב סטטיסטיקות יומיות
-  const todayStats = {
-    total: allTodayOrders.length,
-    completed: allTodayOrders.filter(o => o.status === 'completed').length,
-    preparing: allTodayOrders.filter(o => o.status === 'preparing').length,
-    canceled: allTodayOrders.filter(o => o.status === 'canceled').length,
+  // חישוב סטטיסטיקות כלליות
+  const stats = {
+    total: allOrders.length,
+    new: allOrders.filter(o => o.status === 'new').length,
+    preparing: allOrders.filter(o => o.status === 'preparing').length,
+    completed: allOrders.filter(o => o.status === 'completed').length,
+    canceled: allOrders.filter(o => o.status === 'canceled').length,
+    pending_payment: allOrders.filter(o => o.status === 'pending_payment').length,
   };
 
   return (
@@ -355,12 +344,12 @@ const Orders = () => {
       {/* Header */}
       <div className="bg-card border-b sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-            <div className="flex flex-col">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-2xl font-bold">ASAF POS</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 {localStorage.getItem("device_name")}
-              </p>
+              </span>
             </div>
             <div className="flex gap-1 sm:gap-2 flex-wrap justify-end sm:justify-start">
               {/* כפתורים למחשב */}
@@ -614,23 +603,31 @@ const Orders = () => {
           </TabsContent>
 
           <TabsContent value="all" className="mt-6">
-            {/* סטטיסטיקות יומיות */}
+            {/* סטטיסטיקות */}
             <Card className="p-4 mb-6" dir="rtl">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{todayStats.total}</div>
-                  <div className="text-sm text-muted-foreground">סה"כ הזמנות</div>
+                  <div className="text-2xl font-bold">{stats.total}</div>
+                  <div className="text-sm text-muted-foreground">סה"כ</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-500">{todayStats.completed}</div>
-                  <div className="text-sm text-muted-foreground">הושלמו</div>
+                  <div className="text-2xl font-bold text-blue-500">{stats.new}</div>
+                  <div className="text-sm text-muted-foreground">חדשות</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-500">{todayStats.preparing}</div>
+                  <div className="text-2xl font-bold text-orange-500">{stats.pending_payment}</div>
+                  <div className="text-sm text-muted-foreground">ממתינות</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-500">{stats.preparing}</div>
                   <div className="text-sm text-muted-foreground">בהכנה</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-500">{todayStats.canceled}</div>
+                  <div className="text-2xl font-bold text-green-500">{stats.completed}</div>
+                  <div className="text-sm text-muted-foreground">הושלמו</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-500">{stats.canceled}</div>
                   <div className="text-sm text-muted-foreground">בוטלו</div>
                 </div>
               </div>
@@ -638,7 +635,7 @@ const Orders = () => {
             
             {/* רשימת הזמנות */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {allTodayOrders.map((order) => (
+              {allOrders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
@@ -649,9 +646,9 @@ const Orders = () => {
                 />
               ))}
             </div>
-            {allTodayOrders.length === 0 && (
+            {allOrders.length === 0 && (
               <Card className="p-8 text-center">
-                <p className="text-muted-foreground">אין הזמנות היום</p>
+                <p className="text-muted-foreground">אין הזמנות</p>
               </Card>
             )}
           </TabsContent>
