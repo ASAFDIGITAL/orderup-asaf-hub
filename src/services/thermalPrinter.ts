@@ -251,7 +251,13 @@ class ThermalPrinterService {
     if (order.notes) {
       lines.push('');
       lines.push(this.reverseText('הערות'));
-      lines.push(this.reverseText(order.notes));
+      // אם יש | מפצלים ומהפכים כל חלק בנפרד
+      if (order.notes.includes('|')) {
+        const parts = order.notes.split('|').map(part => this.reverseText(part.trim()));
+        lines.push(parts.join(' | '));
+      } else {
+        lines.push(this.reverseText(order.notes));
+      }
     }
     
     // תשלום
@@ -263,7 +269,7 @@ class ThermalPrinterService {
     // כותרת תחתונה
     lines.push('');
     if (settings.footer) {
-      lines.push(settings.footer);
+      lines.push(this.reverseText(settings.footer));
     } else {
       lines.push(this.reverseText('תודה רבה'));
     }
