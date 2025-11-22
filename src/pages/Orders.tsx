@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { LogOut, RefreshCw, Printer, Bell, BellOff, Bluetooth, Search, Filter, X, Bug } from "lucide-react";
+import { LogOut, RefreshCw, Printer, Bell, BellOff, Bluetooth, Search, Filter, X, Bug, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { Order } from "@/types/order";
 import OrderCard from "@/components/OrderCard";
 import OrderDetailsDialog from "@/components/OrderDetailsDialog";
 import PrinterSelectionDialog from "@/components/PrinterSelectionDialog";
+import RestaurantSettingsDialog from "@/components/RestaurantSettingsDialog";
 import { thermalPrinter } from "@/services/thermalPrinter";
 
 const Orders = () => {
@@ -29,6 +30,7 @@ const Orders = () => {
   const [activeTab, setActiveTab] = useState("new");
   const [isPrinterConnected, setIsPrinterConnected] = useState(false);
   const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
+  const [isRestaurantSettingsOpen, setIsRestaurantSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [advancedFilters, setAdvancedFilters] = useState({
     minAmount: "",
@@ -383,6 +385,14 @@ const Orders = () => {
               >
                 <Bug className="h-4 w-4" />
               </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setIsRestaurantSettingsOpen(true)}
+                title="הגדרות מסעדה"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 יציאה
@@ -595,6 +605,12 @@ const Orders = () => {
         open={isPrinterDialogOpen}
         onOpenChange={setIsPrinterDialogOpen}
         onConnected={handlePrinterConnected}
+      />
+
+      {/* Restaurant Settings Dialog */}
+      <RestaurantSettingsDialog
+        open={isRestaurantSettingsOpen}
+        onOpenChange={setIsRestaurantSettingsOpen}
       />
     </div>
   );
