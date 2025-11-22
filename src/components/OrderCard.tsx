@@ -8,11 +8,12 @@ interface OrderCardProps {
   order: Order;
   onViewDetails: (order: Order) => void;
   onPrint: (order: Order) => void;
+  onPreview: (order: Order) => void;
   getStatusColor: (status: string) => string;
   getStatusLabel: (status: string) => string;
 }
 
-const OrderCard = ({ order, onViewDetails, onPrint, getStatusColor, getStatusLabel }: OrderCardProps) => {
+const OrderCard = ({ order, onViewDetails, onPrint, onPreview, getStatusColor, getStatusLabel }: OrderCardProps) => {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
@@ -85,12 +86,20 @@ const OrderCard = ({ order, onViewDetails, onPrint, getStatusColor, getStatusLab
             פרטים
           </Button>
           <Button 
+            variant="outline"
+            className="flex-1"
+            onClick={() => onPreview(order)}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            תצוגה מקדימה
+          </Button>
+          <Button 
             variant="default"
             className="flex-1"
             onClick={() => onPrint(order)}
           >
             <Printer className="h-4 w-4 mr-2" />
-            הדפס
+            הדפס מיידי
           </Button>
         </div>
       </CardContent>
