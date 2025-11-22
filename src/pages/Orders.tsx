@@ -139,20 +139,37 @@ const Orders = () => {
         const brandNewOrders = currentNewOrders.filter((o: Order) => !lastOrderIds.includes(o.id));
         
         if (brandNewOrders.length > 0) {
+          console.log('🆕 הזמנות חדשות:', brandNewOrders.map(o => o.id));
+          
           // התראה קולית
           if (soundEnabled) {
             playNotificationSound();
             toast.success(`הזמנה חדשה התקבלה! #${brandNewOrders[0]?.id}`);
           }
           
-          // הדפסה אוטומטית - רק להזמנות שלא הודפסו
-          if (autoPrintEnabled && isPrinterConnected) {
-            brandNewOrders.forEach(order => {
-              // בדיקה אם כבר הודפס
-              if (!thermalPrinter.isOrderPrinted(order.id)) {
-                handlePrintOrder(order);
-              }
-            });
+          // הדפסה אוטומטית
+          if (autoPrintEnabled) {
+            console.log('🖨️ הדפסה אוטומטית מופעלת');
+            console.log('🔌 מדפסת מחוברת:', isPrinterConnected);
+            
+            if (!isPrinterConnected) {
+              console.log('⚠️ מדפסת לא מחוברת - מדלג על הדפסה');
+              toast.warning('הדפסה אוטומטית: המדפסת לא מחוברת');
+            } else {
+              brandNewOrders.forEach(order => {
+                const alreadyPrinted = thermalPrinter.isOrderPrinted(order.id);
+                console.log(`📋 הזמנה #${order.id} - כבר הודפס: ${alreadyPrinted}`);
+                
+                if (!alreadyPrinted) {
+                  console.log(`✅ מדפיס הזמנה #${order.id}`);
+                  handlePrintOrder(order);
+                } else {
+                  console.log(`⏭️ מדלג על הזמנה #${order.id} - כבר הודפס`);
+                }
+              });
+            }
+          } else {
+            console.log('⏸️ הדפסה אוטומטית מבוטלת');
           }
         }
         
@@ -213,6 +230,8 @@ const Orders = () => {
 
   const handlePrinterConnected = () => {
     setIsPrinterConnected(true);
+    toast.success('המדפסת מחוברת בהצלחה');
+    console.log('✅ מדפסת מחוברת - isPrinterConnected = true');
   };
 
   const handleDisconnectPrinter = async () => {
