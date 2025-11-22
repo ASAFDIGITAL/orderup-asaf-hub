@@ -145,13 +145,10 @@ const Orders = () => {
             toast.success(`הזמנה חדשה התקבלה! #${brandNewOrders[0]?.id}`);
           }
           
-          // הדפסה אוטומטית - רק להזמנות שלא הודפסו
+          // הדפסה אוטומטית
           if (autoPrintEnabled && isPrinterConnected) {
             brandNewOrders.forEach(order => {
-              // בדיקה אם כבר הודפס
-              if (!thermalPrinter.isOrderPrinted(order.id)) {
-                handlePrintOrder(order);
-              }
+              handlePrintOrder(order);
             });
           }
         }
@@ -229,12 +226,6 @@ const Orders = () => {
     try {
       if (!isPrinterConnected) {
         toast.error("יש להתחבר למדפסת תחילה");
-        return;
-      }
-
-      // בדיקה אם כבר הודפס
-      if (thermalPrinter.isOrderPrinted(order.id)) {
-        toast.info(`הזמנה #${order.id} כבר הודפסה`);
         return;
       }
 
