@@ -113,80 +113,95 @@ class ThermalPrinterService {
 
   /**
    * פורמט טקסט למדפסת תרמית
+   * תמיכה מלאה ב-RTL (Right-to-Left) לעברית
    */
   private formatReceiptText(order: Order): string {
+    // פונקציה להיפוך טקסט עברית למדפסת
+    const reverseHebrew = (text: string): string => {
+      return text.split('').reverse().join('');
+    };
+    
+    let lines: string[] = [];
     
     // כותרת
-    let text = '====================\n';
-    text += `הזמנה #${order.id}\n`;
-    text += '====================\n\n';
+    lines.push('====================');
+    lines.push(reverseHebrew(`הזמנה #${order.id}`));
+    lines.push('====================');
+    lines.push('');
     
     // פרטי לקוח
-    text += `לקוח: ${order.customer_name}\n`;
+    lines.push(reverseHebrew(`לקוח: ${order.customer_name}`));
     if (order.customer_phone) {
-      text += `טלפון: ${order.customer_phone}\n`;
+      lines.push(reverseHebrew(`טלפון: ${order.customer_phone}`));
     }
     if (order.customer_address) {
-      text += `כתובת: ${order.customer_address}\n`;
+      lines.push(reverseHebrew(`כתובת: ${order.customer_address}`));
     }
-    text += '\n';
+    lines.push('');
     
     // פרטי הזמנה
-    text += '--------------------\n';
-    text += 'פריטים:\n';
-    text += '--------------------\n';
+    lines.push('--------------------');
+    lines.push(reverseHebrew('פריטים:'));
+    lines.push('--------------------');
     
     // פריטים
     order.items.forEach((item) => {
-      text += `${item.qty}x ${item.name}\n`;
+      lines.push(reverseHebrew(`${item.qty}x ${item.name}`));
       
       // אפשרויות
       if (item.options?.choices && item.options.choices.length > 0) {
         item.options.choices.forEach((choice) => {
-          text += `  ${choice.group}:\n`;
+          lines.push(reverseHebrew(`  ${choice.group}:`));
           choice.items.forEach((subItem) => {
-            text += `    + ${subItem.name}\n`;
+            lines.push(reverseHebrew(`    + ${subItem.name}`));
           });
         });
       }
       
       // הערה
       if (item.options?.note) {
-        text += `  הערה: ${item.options.note}\n`;
+        lines.push(reverseHebrew(`  הערה: ${item.options.note}`));
       }
       
-      text += `  ${item.total} ש"ח\n\n`;
+      lines.push(reverseHebrew(`  ${item.total} ש"ח`));
+      lines.push('');
     });
     
     // סיכום
-    text += '--------------------\n';
-    text += `סכום ביניים: ${order.subtotal} ש"ח\n`;
+    lines.push('--------------------');
+    lines.push(reverseHebrew(`סכום ביניים: ${order.subtotal} ש"ח`));
     if (order.delivery_fee > 0) {
-      text += `דמי משלוח: ${order.delivery_fee} ש"ח\n`;
+      lines.push(reverseHebrew(`דמי משלוח: ${order.delivery_fee} ש"ח`));
     }
-    text += `סה"כ: ${order.total} ש"ח\n`;
-    text += '--------------------\n\n';
+    lines.push(reverseHebrew(`סה"כ: ${order.total} ש"ח`));
+    lines.push('--------------------');
+    lines.push('');
     
     // הערות
     if (order.notes) {
-      text += 'הערות:\n';
-      text += `${order.notes}\n\n`;
+      lines.push(reverseHebrew('הערות:'));
+      lines.push(reverseHebrew(order.notes));
+      lines.push('');
     }
     
     // תשלום
     if (order.payment_method) {
-      text += `אמצעי תשלום: ${order.payment_method}\n`;
+      const paymentText = order.payment_method === 'cash' ? 'מזומן' : 'כרטיס אשראי';
+      lines.push(reverseHebrew(`אמצעי תשלום: ${paymentText}`));
     }
     
     // משלוח
     if (order.shipping_method) {
-      text += `אופן משלוח: ${order.shipping_method}\n`;
+      const shippingText = order.shipping_method === 'delivery' ? 'משלוח' : 'איסוף עצמי';
+      lines.push(reverseHebrew(`אופן משלוח: ${shippingText}`));
     }
     
-    text += '\n';
-    text += 'תודה רבה!\n\n\n';
+    lines.push('');
+    lines.push(reverseHebrew('תודה רבה!'));
+    lines.push('');
+    lines.push('');
     
-    return text;
+    return lines.join('\n');
   }
 
   /**
@@ -201,24 +216,63 @@ class ThermalPrinterService {
       const receiptText = this.formatReceiptText(order);
       
       await CapacitorThermalPrinter.begin()
-        .align('center')
-        .bold()
-        .text(`הזמנה #${order.id}\n`)
-        .clearFormatting()
-        .text('====================\n\n')
         .align('right')
         .text(receiptText)
         .text('\n\n')
-        .align('center')
-        .text('תודה רבה!\n\n')
         .cutPaper()
         .write();
         
-      console.log('קבלה הודפסה בהצלחה');
+      console.log('✅ קבלה הודפסה בהצלחה - הזמנה #' + order.id);
+      
+      // שמור שההזמנה הודפסה
+      this.markOrderAsPrinted(order.id);
     } catch (error) {
       console.error('Failed to print receipt:', error);
       throw error;
     }
+  }
+
+  /**
+   * סימון הזמנה כמודפסת
+   */
+  private markOrderAsPrinted(orderId: number): void {
+    try {
+      const printed = this.getPrintedOrders();
+      printed.add(orderId);
+      localStorage.setItem('printed_orders', JSON.stringify([...printed]));
+    } catch (error) {
+      console.error('Failed to mark order as printed:', error);
+    }
+  }
+
+  /**
+   * בדיקה אם הזמנה כבר הודפסה
+   */
+  isOrderPrinted(orderId: number): boolean {
+    const printed = this.getPrintedOrders();
+    return printed.has(orderId);
+  }
+
+  /**
+   * קבלת רשימת הזמנות שהודפסו
+   */
+  private getPrintedOrders(): Set<number> {
+    try {
+      const stored = localStorage.getItem('printed_orders');
+      if (stored) {
+        return new Set(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Failed to get printed orders:', error);
+    }
+    return new Set();
+  }
+
+  /**
+   * ניקוי רשימת הזמנות מודפסות (למשל, פעם ביום)
+   */
+  clearPrintedOrders(): void {
+    localStorage.removeItem('printed_orders');
   }
 
   /**

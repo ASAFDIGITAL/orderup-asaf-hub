@@ -26,10 +26,6 @@ const Orders = () => {
     return saved ? JSON.parse(saved) : true;
   });
   const [lastOrderIds, setLastOrderIds] = useState<number[]>([]);
-  const [printedOrderIds, setPrintedOrderIds] = useState<number[]>(() => {
-    const saved = localStorage.getItem("printed_order_ids");
-    return saved ? JSON.parse(saved) : [];
-  });
   const [activeTab, setActiveTab] = useState("new");
   const [isPrinterConnected, setIsPrinterConnected] = useState(false);
   const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
@@ -150,13 +146,11 @@ const Orders = () => {
           }
           
           // הדפסה אוטומטית - רק להזמנות שלא הודפסו
-          if (autoPrintEnabled) {
+          if (autoPrintEnabled && isPrinterConnected) {
             brandNewOrders.forEach(order => {
-              if (!printedOrderIds.includes(order.id)) {
+              // בדיקה אם כבר הודפס
+              if (!thermalPrinter.isOrderPrinted(order.id)) {
                 handlePrintOrder(order);
-                const updatedPrinted = [...printedOrderIds, order.id];
-                setPrintedOrderIds(updatedPrinted);
-                localStorage.setItem("printed_order_ids", JSON.stringify(updatedPrinted));
               }
             });
           }
@@ -238,18 +232,19 @@ const Orders = () => {
         return;
       }
 
-      toast.loading(`מדפיס הזמנה #${order.id}...`);
+      // בדיקה אם כבר הודפס
+      if (thermalPrinter.isOrderPrinted(order.id)) {
+        toast.info(`הזמנה #${order.id} כבר הודפסה`);
+        return;
+      }
+
+      toast.loading(`מדפיס הזמנה #${order.id}...`, { id: `print-${order.id}` });
       await thermalPrinter.printReceipt(order);
       
-      // עדכון רשימת הזמנות שהודפסו
-      const newPrintedIds = [...printedOrderIds, order.id];
-      setPrintedOrderIds(newPrintedIds);
-      localStorage.setItem("printed_order_ids", JSON.stringify(newPrintedIds));
-      
-      toast.success(`הזמנה #${order.id} הודפסה בהצלחה`);
+      toast.success(`הזמנה #${order.id} הודפסה בהצלחה`, { id: `print-${order.id}` });
     } catch (error) {
       console.error("Print error:", error);
-      toast.error("שגיאה בהדפסה. ודא שהמדפסת מחוברת ופועלת.");
+      toast.error(`שגיאה בהדפסה: ${error instanceof Error ? error.message : 'שגיאה לא ידועה'}`, { id: `print-${order.id}` });
     }
   };
 
