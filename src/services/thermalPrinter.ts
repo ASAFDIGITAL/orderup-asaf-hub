@@ -263,17 +263,12 @@ class ThermalPrinterService {
     // קו מפריד
     lines.push('-----------------------------');
     
-    // הערות
+    // הערות - תמיכה בטקסט מעורב עברית/ערבית עם או בלי |
     if (order.notes) {
       lines.push('');
       lines.push(this.reverseText('הערות'));
-      // אם יש | מפצלים ומטפלים בכל חלק בנפרד (עברית/ערבית מעורבים)
-      if (order.notes.includes('|')) {
-        const parts = order.notes.split('|').map(part => this.handleMixedText(part.trim()));
-        lines.push(parts.join(' | '));
-      } else {
-        lines.push(this.handleMixedText(order.notes));
-      }
+      // הפוך את כל הטקסט ביחד (כולל | אם יש) כי גם עברית וגם ערבית RTL
+      lines.push(this.handleMixedText(order.notes));
     }
     
     // תשלום
