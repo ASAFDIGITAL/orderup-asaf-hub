@@ -162,6 +162,22 @@ class ThermalPrinterService {
   }
 
   /**
+   * טיפול בטקסט מעורב עברית-ערבית
+   * מזהה תווים ערביים ומטפל בכל חלק בנפרד
+   */
+  private handleMixedText(text: string): string {
+    const arabicRegex = /[\u0600-\u06FF]/;
+    
+    // אם אין תווים ערביים, פשוט הפוך הכל
+    if (!arabicRegex.test(text)) {
+      return this.reverseText(text);
+    }
+    
+    // אם יש תווים ערביים, הפוך את כל הטקסט (כי גם ערבית וגם עברית RTL)
+    return this.reverseText(text);
+  }
+
+  /**
    * פורמט טקסט למדפסת תרמית
    * קבלה בעברית עם תמיכה בתוכן בערבית
    */
@@ -251,12 +267,12 @@ class ThermalPrinterService {
     if (order.notes) {
       lines.push('');
       lines.push(this.reverseText('הערות'));
-      // אם יש | מפצלים ומהפכים כל חלק בנפרד
+      // אם יש | מפצלים ומטפלים בכל חלק בנפרד (עברית/ערבית מעורבים)
       if (order.notes.includes('|')) {
-        const parts = order.notes.split('|').map(part => this.reverseText(part.trim()));
+        const parts = order.notes.split('|').map(part => this.handleMixedText(part.trim()));
         lines.push(parts.join(' | '));
       } else {
-        lines.push(this.reverseText(order.notes));
+        lines.push(this.handleMixedText(order.notes));
       }
     }
     
