@@ -179,13 +179,13 @@ class ThermalPrinterService {
     lines.push('------------------------------------');
     
     // פרטי לקוח - תווית בעברית בשורה נפרדת, תוכן (יכול להיות בערבית) בשורה הבאה
-    lines.push(this.reverseText('שם לקוח:'));
-    lines.push(this.reverseText(order.customer_name));
+    lines.push(this.reverseText('לקוח:'));
+    lines.push(order.customer_name);
     lines.push(this.reverseText('טלפון:'));
     lines.push(order.customer_phone); // מספרים לא צריכים היפוך
     if (order.customer_address) {
       lines.push(this.reverseText('כתובת:'));
-      lines.push(this.reverseText(order.customer_address));
+      lines.push(order.customer_address);
     }
     
     // קו מפריד
@@ -199,15 +199,15 @@ class ThermalPrinterService {
     
     // פריטים
     order.items.forEach((item, index) => {
-      lines.push(this.reverseText(`${item.name} × ${item.qty}`));
-      lines.push(this.reverseText(`${Number(item.total).toFixed(2)} ₪`));
+      lines.push(`${item.name} × ${item.qty}`);
+      lines.push(`${Number(item.total).toFixed(2)} ₪`);
       
       // אפשרויות
       if (item.options?.choices && item.options.choices.length > 0) {
         item.options.choices.forEach((choice) => {
           const choiceItems = choice.items.map(i => i.name).join(', ');
           if (choiceItems) {
-            lines.push(this.reverseText(`  ${choice.group}: ${choiceItems}`));
+            lines.push(`  ${choice.group}: ${choiceItems}`);
           }
         });
       }
@@ -215,7 +215,7 @@ class ThermalPrinterService {
       // הערה לפריט
       if (item.options?.note) {
         lines.push(this.reverseText('  הערה:'));
-        lines.push(this.reverseText(`  ${item.options.note}`));
+        lines.push(item.options.note);
       }
       
       // קו מפריד בין פריטים
@@ -227,10 +227,13 @@ class ThermalPrinterService {
     // קו מפריד לפני סיכום
     lines.push('------------------------------------');
     
-    // סיכום
-    lines.push(this.reverseText(`ביניים                    ${Number(order.subtotal).toFixed(2)} ₪`));
-    lines.push(this.reverseText(`משלוח                     ${Number(order.delivery_fee).toFixed(2)} ₪`));
-    lines.push(this.reverseText(`סה"כ                      ${Number(order.total).toFixed(2)} ₪`));
+    // סיכום - תוויות בעברית, סכומים בשורה נפרדת
+    lines.push(this.reverseText('ביניים'));
+    lines.push(`${Number(order.subtotal).toFixed(2)} ₪`);
+    lines.push(this.reverseText('משלוח'));
+    lines.push(`${Number(order.delivery_fee).toFixed(2)} ₪`);
+    lines.push(this.reverseText('סה"כ'));
+    lines.push(`${Number(order.total).toFixed(2)} ₪`);
     
     // קו מפריד
     lines.push('------------------------------------');
@@ -238,8 +241,8 @@ class ThermalPrinterService {
     // הערות
     if (order.notes) {
       lines.push('');
-      lines.push(this.reverseText('הערות:'));
-      lines.push(this.reverseText(order.notes));
+      lines.push(this.reverseText('הערות'));
+      lines.push(order.notes);
     }
     
     // תשלום
