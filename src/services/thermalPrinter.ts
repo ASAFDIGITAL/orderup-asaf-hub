@@ -251,7 +251,7 @@ class ThermalPrinterService {
     if (order.notes) {
       lines.push('');
       lines.push(this.reverseText('הערות'));
-      lines.push(order.notes);
+      lines.push(this.reverseText(order.notes));
     }
     
     // תשלום
@@ -265,7 +265,7 @@ class ThermalPrinterService {
     if (settings.footer) {
       lines.push(settings.footer);
     } else {
-      lines.push(this.reverseText('תודה רבה!'));
+      lines.push(this.reverseText('תודה רבה'));
     }
     lines.push('');
     lines.push('');
