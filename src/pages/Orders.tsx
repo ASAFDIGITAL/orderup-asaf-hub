@@ -328,13 +328,19 @@ const Orders = () => {
   const newOrders = filterOrders("new");
   const preparingOrders = filterOrders("preparing");
   
-  // הזמנות היום בלבד
+  // הזמנות היום בלבד - כל הזמנה שנוצרה היום
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayOrders = orders.filter((order) => {
     const orderDate = new Date(order.created_at);
     orderDate.setHours(0, 0, 0, 0);
     return orderDate.getTime() === today.getTime();
+  });
+  
+  console.log('📊 סטטיסטיקות:', {
+    totalOrders: orders.length,
+    todayOrders: todayOrders.length,
+    todayOrdersDetails: todayOrders.map(o => ({ id: o.id, status: o.status, created: o.created_at }))
   });
   
   // סטטיסטיקות היום
@@ -356,14 +362,11 @@ const Orders = () => {
       <div className="bg-card border-b sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-2xl font-bold">ASAF POS</h1>
               <span className="text-xs sm:text-sm text-muted-foreground">
                 {localStorage.getItem("device_name")}
               </span>
-              <Badge variant="outline" className="bg-primary/10">
-                היום: {todayStats.total} הזמנות • הושלמו: {todayStats.completed}
-              </Badge>
             </div>
             <div className="flex gap-1 sm:gap-2 flex-wrap justify-end sm:justify-start">
               {/* כפתורים למחשב */}
