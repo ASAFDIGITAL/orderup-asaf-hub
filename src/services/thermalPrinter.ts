@@ -223,9 +223,6 @@ class ThermalPrinterService {
         .write();
         
       console.log('✅ קבלה הודפסה בהצלחה - הזמנה #' + order.id);
-      
-      // שמור שההזמנה הודפסה
-      this.markOrderAsPrinted(order.id);
     } catch (error) {
       console.error('Failed to print receipt:', error);
       throw error;
