@@ -559,7 +559,7 @@ const Orders = () => {
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="new" className="relative">
               חדש
               {newOrders.length > 0 && (
@@ -576,7 +576,6 @@ const Orders = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="all">הכל</TabsTrigger>
           </TabsList>
 
           <TabsContent value="new" className="mt-6">
@@ -615,50 +614,6 @@ const Orders = () => {
             {preparingOrders.length === 0 && (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">אין הזמנות בהכנה</p>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="all" className="mt-6">
-            {/* סטטיסטיקות היום */}
-            <Card className="p-6 mb-6" dir="rtl">
-              <h3 className="text-lg font-bold mb-4">סיכום היום</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-primary/5 rounded-lg">
-                  <div className="text-3xl font-bold text-primary">{todayStats.total}</div>
-                  <div className="text-sm text-muted-foreground mt-1">סה"כ הזמנות</div>
-                </div>
-                <div className="text-center p-4 bg-yellow-500/10 rounded-lg">
-                  <div className="text-3xl font-bold text-yellow-600">{todayStats.preparing}</div>
-                  <div className="text-sm text-muted-foreground mt-1">בהכנה</div>
-                </div>
-                <div className="text-center p-4 bg-green-500/10 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600">{todayStats.completed}</div>
-                  <div className="text-sm text-muted-foreground mt-1">הושלמו</div>
-                </div>
-                <div className="text-center p-4 bg-blue-500/10 rounded-lg">
-                  <div className="text-3xl font-bold text-blue-600">₪{todayStats.totalRevenue.toFixed(2)}</div>
-                  <div className="text-sm text-muted-foreground mt-1">הכנסות היום</div>
-                </div>
-              </div>
-            </Card>
-            
-            {/* רשימת הזמנות היום */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {todayOrders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  onViewDetails={setSelectedOrder}
-                  onPrint={handlePrintOrder}
-                  getStatusColor={getStatusColor}
-                  getStatusLabel={getStatusLabel}
-                />
-              ))}
-            </div>
-            {todayOrders.length === 0 && (
-              <Card className="p-8 text-center">
-                <p className="text-muted-foreground">אין הזמנות היום</p>
               </Card>
             )}
           </TabsContent>

@@ -181,7 +181,7 @@ class ThermalPrinterService {
     
     // פרטי לקוח
     lines.push(`לקוח: ${order.customer_name}`);
-    lines.push(`${this.reverseText('טלפון')}: ${LTR}${order.customer_phone}${LTR}`);
+    lines.push(`${LTR}${this.reverseText('טלפון')}: ${order.customer_phone}${LTR}`);
     if (order.customer_address) {
       lines.push(`כתובת: ${order.customer_address}`);
     }
@@ -240,9 +240,9 @@ class ThermalPrinterService {
     lines.push('-----------------------------');
     
     // סיכום
-    lines.push(`${LTR}${Number(order.subtotal).toFixed(2)} ₪${LTR}                    ${this.reverseText('ביניים')}`);
-    lines.push(`${LTR}${Number(order.delivery_fee).toFixed(2)} ₪${LTR}                     ${this.reverseText('משלוח')}`);
-    lines.push(`${LTR}${Number(order.total).toFixed(2)} ₪${LTR}                      ${this.reverseText('סה"כ')}`);
+    lines.push(`${this.reverseText('ביניים')} ${LTR}${Number(order.subtotal).toFixed(2)} ₪${LTR}`);
+    lines.push(`${this.reverseText('משלוח')} ${LTR}${Number(order.delivery_fee).toFixed(2)} ₪${LTR}`);
+    lines.push(`${this.reverseText('סה"כ')} ${LTR}${Number(order.total).toFixed(2)} ₪${LTR}`);
     
     // קו מפריד
     lines.push('-----------------------------');
@@ -250,7 +250,7 @@ class ThermalPrinterService {
     // הערות
     if (order.notes) {
       lines.push('');
-      lines.push('הערות');
+      lines.push(this.reverseText('הערות'));
       lines.push(order.notes);
     }
     
@@ -265,7 +265,7 @@ class ThermalPrinterService {
     if (settings.footer) {
       lines.push(settings.footer);
     } else {
-      lines.push('תודה רבה!');
+      lines.push(this.reverseText('תודה רבה!'));
     }
     lines.push('');
     lines.push('');
