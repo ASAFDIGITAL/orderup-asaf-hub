@@ -9,11 +9,22 @@ class ThermalPrinterService {
   private deviceAddress: string | null = null;
 
   /**
-   * אתחול - לא נדרש עבור plugin זה
+   * אתחול - ניסיון להתחבר למדפסת שמורה
    */
   async initialize(): Promise<void> {
-    // Plugin זה לא דורש אתחול
     console.log('Thermal printer ready');
+    
+    // ניסיון לטעון מדפסת שמורה
+    const savedAddress = localStorage.getItem('saved_printer_address');
+    if (savedAddress) {
+      try {
+        console.log('מנסה להתחבר למדפסת שמורה:', savedAddress);
+        await this.connectToPrinter(savedAddress);
+      } catch (error) {
+        console.log('לא הצלחתי להתחבר למדפסת שמורה:', error);
+        // לא זורקים שגיאה - פשוט ממשיכים בלי מדפסת
+      }
+    }
   }
 
   /**
@@ -86,6 +97,8 @@ class ThermalPrinterService {
       
       if (result && result.address) {
         this.deviceAddress = result.address;
+        // שמירת כתובת המדפסת ב-localStorage
+        localStorage.setItem('saved_printer_address', result.address);
         console.log('התחבר למדפסת:', result.name, result.address);
       } else {
         throw new Error('כישלון בהתחברות למדפסת');
@@ -104,6 +117,8 @@ class ThermalPrinterService {
       try {
         await CapacitorThermalPrinter.disconnect();
         this.deviceAddress = null;
+        // מחיקת כתובת המדפסת מ-localStorage
+        localStorage.removeItem('saved_printer_address');
         console.log('מנותק מהמדפסת');
       } catch (error) {
         console.error('Failed to disconnect:', error);
@@ -116,17 +131,23 @@ class ThermalPrinterService {
    * תמיכה מלאה ב-RTL (Right-to-Left) לעברית
    */
   private formatReceiptText(order: Order): string {
-    // פונקציה להיפוך רק טקסט עברית
+    // פונקציה להיפוך רק חלקים עבריים בטקסט
     const reverseHebrew = (text: string): string => {
       // בדיקה אם יש תווים עבריים בטקסט
       const hasHebrew = /[\u0590-\u05FF]/.test(text);
       
-      // רק אם יש עברית - הופכים
-      if (hasHebrew) {
+      // אם אין עברית כלל - משאירים כמו שזה
+      if (!hasHebrew) {
+        return text;
+      }
+      
+      // אם כל הטקסט הוא עברית בלבד - הופכים הכל
+      const isOnlyHebrew = /^[\u0590-\u05FF\s:]+$/.test(text);
+      if (isOnlyHebrew) {
         return text.split('').reverse().join('');
       }
       
-      // אם אין עברית (לדוגמה: ערבית, אנגלית, מספרים) - משאירים כמו שזה
+      // אם יש עירבוב של עברית עם שפות אחרות/מספרים - לא הופכים
       return text;
     };
     

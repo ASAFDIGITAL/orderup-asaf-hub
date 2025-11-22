@@ -47,6 +47,16 @@ const Orders = () => {
       return;
     }
 
+    // אתחול המדפסת (ניסיון להתחבר למדפסת שמורה)
+    thermalPrinter.initialize().then(() => {
+      if (thermalPrinter.isConnected()) {
+        setIsPrinterConnected(true);
+        toast.success("התחבר למדפסת השמורה");
+      }
+    }).catch(() => {
+      // לא עושים כלום אם לא הצלחנו להתחבר
+    });
+
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000); // כל 10 שניות
 
