@@ -14,6 +14,7 @@ import OrderCard from "@/components/OrderCard";
 import OrderDetailsDialog from "@/components/OrderDetailsDialog";
 import PrinterSelectionDialog from "@/components/PrinterSelectionDialog";
 import RestaurantSettingsDialog from "@/components/RestaurantSettingsDialog";
+import { MobileNav } from "@/components/MobileNav";
 import { thermalPrinter } from "@/services/thermalPrinter";
 
 const Orders = () => {
@@ -252,7 +253,20 @@ const Orders = () => {
   };
 
   const filterOrders = (status: string) => {
-    let filtered = status === "all" ? orders : orders.filter((order) => order.status === status);
+    let filtered = orders;
+    
+    // אם זה טאב "הכל" - נציג רק הזמנות מהיום
+    if (status === "all") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      filtered = orders.filter((order) => {
+        const orderDate = new Date(order.created_at);
+        orderDate.setHours(0, 0, 0, 0);
+        return orderDate.getTime() === today.getTime();
+      });
+    } else {
+      filtered = orders.filter((order) => order.status === status);
+    }
     
     // חיפוש טקסט
     if (searchQuery.trim()) {
@@ -326,6 +340,15 @@ const Orders = () => {
 
   const newOrders = filterOrders("new");
   const preparingOrders = filterOrders("preparing");
+  const allTodayOrders = filterOrders("all");
+  
+  // חישוב סטטיסטיקות יומיות
+  const todayStats = {
+    total: allTodayOrders.length,
+    completed: allTodayOrders.filter(o => o.status === 'completed').length,
+    preparing: allTodayOrders.filter(o => o.status === 'preparing').length,
+    canceled: allTodayOrders.filter(o => o.status === 'canceled').length,
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -340,63 +363,87 @@ const Orders = () => {
               </p>
             </div>
             <div className="flex gap-1 sm:gap-2 flex-wrap justify-end sm:justify-start">
-              <Button
-                variant={isPrinterConnected ? "default" : "outline"}
-                size="icon"
-                onClick={isPrinterConnected ? handleDisconnectPrinter : handleConnectPrinter}
-                title={isPrinterConnected ? "נתק מדפסת" : "התחבר למדפסת"}
-              >
-                <Bluetooth className={`h-4 w-4 ${isPrinterConnected ? "text-white" : ""}`} />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                title={soundEnabled ? "כבה התראות" : "הפעל התראות"}
-              >
-                {soundEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
+              {/* כפתורים למחשב */}
+              <div className="hidden md:flex gap-2">
+                <Button
+                  variant={isPrinterConnected ? "default" : "outline"}
+                  size="icon"
+                  onClick={isPrinterConnected ? handleDisconnectPrinter : handleConnectPrinter}
+                  title={isPrinterConnected ? "נתק מדפסת" : "התחבר למדפסת"}
+                >
+                  <Bluetooth className={`h-4 w-4 ${isPrinterConnected ? "text-white" : ""}`} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  title={soundEnabled ? "כבה התראות" : "הפעל התראות"}
+                >
+                  {soundEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const newValue = !autoPrintEnabled;
+                    setAutoPrintEnabled(newValue);
+                    localStorage.setItem("auto_print_enabled", JSON.stringify(newValue));
+                    toast.success(newValue ? "הדפסה אוטומטית הופעלה" : "הדפסה אוטומטית כובתה");
+                  }}
+                  title={autoPrintEnabled ? "כבה הדפסה אוטומטית" : "הפעל הדפסה אוטומטית"}
+                >
+                  <Printer className={`h-4 w-4 ${autoPrintEnabled ? "text-green-500" : ""}`} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => navigate("/debug")}
+                  title="מסך דיבוג"
+                >
+                  <Bug className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setIsRestaurantSettingsOpen(true)}
+                  title="הגדרות מסעדה"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  יציאה
+                </Button>
+              </div>
+              
+              {/* תפריט המבורגר למובייל */}
+              <MobileNav
+                isPrinterConnected={isPrinterConnected}
+                soundEnabled={soundEnabled}
+                autoPrintEnabled={autoPrintEnabled}
+                isRefreshing={isRefreshing}
+                onConnectPrinter={handleConnectPrinter}
+                onDisconnectPrinter={handleDisconnectPrinter}
+                onToggleSound={() => setSoundEnabled(!soundEnabled)}
+                onToggleAutoPrint={() => {
                   const newValue = !autoPrintEnabled;
                   setAutoPrintEnabled(newValue);
                   localStorage.setItem("auto_print_enabled", JSON.stringify(newValue));
                   toast.success(newValue ? "הדפסה אוטומטית הופעלה" : "הדפסה אוטומטית כובתה");
                 }}
-                title={autoPrintEnabled ? "כבה הדפסה אוטומטית" : "הפעל הדפסה אוטומטית"}
-              >
-                <Printer className={`h-4 w-4 ${autoPrintEnabled ? "text-green-500" : ""}`} />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => navigate("/debug")}
-                title="מסך דיבוג"
-              >
-                <Bug className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setIsRestaurantSettingsOpen(true)}
-                title="הגדרות מסעדה"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                יציאה
-              </Button>
+                onRefresh={handleRefresh}
+                onOpenDebug={() => navigate("/debug")}
+                onOpenSettings={() => setIsRestaurantSettingsOpen(true)}
+                onLogout={handleLogout}
+              />
             </div>
           </div>
         </div>
@@ -567,8 +614,31 @@ const Orders = () => {
           </TabsContent>
 
           <TabsContent value="all" className="mt-6">
+            {/* סטטיסטיקות יומיות */}
+            <Card className="p-4 mb-6" dir="rtl">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{todayStats.total}</div>
+                  <div className="text-sm text-muted-foreground">סה"כ הזמנות</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-500">{todayStats.completed}</div>
+                  <div className="text-sm text-muted-foreground">הושלמו</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-500">{todayStats.preparing}</div>
+                  <div className="text-sm text-muted-foreground">בהכנה</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-500">{todayStats.canceled}</div>
+                  <div className="text-sm text-muted-foreground">בוטלו</div>
+                </div>
+              </div>
+            </Card>
+            
+            {/* רשימת הזמנות */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {orders.map((order) => (
+              {allTodayOrders.map((order) => (
                 <OrderCard
                   key={order.id}
                   order={order}
@@ -579,9 +649,9 @@ const Orders = () => {
                 />
               ))}
             </div>
-            {orders.length === 0 && (
+            {allTodayOrders.length === 0 && (
               <Card className="p-8 text-center">
-                <p className="text-muted-foreground">אין הזמנות</p>
+                <p className="text-muted-foreground">אין הזמנות היום</p>
               </Card>
             )}
           </TabsContent>
