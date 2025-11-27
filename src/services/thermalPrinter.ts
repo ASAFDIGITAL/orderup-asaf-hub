@@ -212,34 +212,53 @@ class ThermalPrinterService {
     let lines: string[] = [];
     const LTR = "\u200E"; // סימן כיוון טקסט משמאל לימין (לא מודפס)
     
-    // כותרת ותאריך
-    lines.push(this.reverseText(`קבלה / הזמנה #${LTR}${order.id}${LTR}`));
+    // כותרת
+    lines.push(this.reverseText('הזמנה / קבלה'));
+    lines.push('');
+    
+    // מספר הזמנה
+    lines.push(this.reverseText(`מספר הזמנה: ${LTR}${order.id}${LTR}`));
+    
+    // תאריך
     const orderDate = new Date(order.created_at);
     const formattedDate = `${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()} ${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}`;
     lines.push(`${LTR}${formattedDate}${LTR}`);
     
-    // קו מפריד
-    lines.push('-----------------------------');
+    // לקוח
+    lines.push(this.reverseText('לקוח'));
+    lines.push('');
+    lines.push(this.reverseText(order.customer_name));
     
-    // פרטי לקוח
-    lines.push(this.reverseText(`לקוח: ${order.customer_name}`));
-    lines.push(`${LTR}${this.reverseText('טלפון')}: ${order.customer_phone}${LTR}`);
+    // טלפון
+    lines.push(this.reverseText('טלפון'));
+    lines.push('');
+    lines.push(`${LTR}${order.customer_phone}${LTR}`);
+    
+    // כתובת (אם קיימת)
     if (order.customer_address) {
-      lines.push(this.reverseText(`כתובת: ${order.customer_address}`));
+      lines.push('');
+      lines.push(this.reverseText('כתובת'));
+      lines.push('');
+      lines.push(this.reverseText(order.customer_address));
     }
     
-    // קו מפריד
-    lines.push('-----------------------------');
-    
-    // כותרת פריטים
-    lines.push(this.reverseText('פריטים'));
-    
-    // קו מפריד
-    lines.push('-----------------------------');
+    // פרטים
+    lines.push('');
+    lines.push(this.reverseText('פרטים'));
+    lines.push('');
     
     // פריטים
     order.items.forEach((item, index) => {
-      lines.push(`${item.name} × ${LTR}${item.qty}${LTR}`);
+      // שם הפריט
+      lines.push(item.name);
+      lines.push('');
+      
+      // כמות
+      lines.push(`${this.reverseText('כמות')}: ${LTR}${item.qty}${LTR}`);
+      lines.push('');
+      
+      // מחיר
+      lines.push(this.reverseText('מחיר'));
       lines.push(`${LTR}${Number(item.total).toFixed(2)} ₪${LTR}`);
       
       // אפשרויות
@@ -249,12 +268,12 @@ class ThermalPrinterService {
             opt.choices.forEach((choice: any) => {
               const choiceItems = choice.items.map((i: any) => i.name).join(', ');
               if (choiceItems) {
-                lines.push(`  ${choice.group}: ${choiceItems}`);
+                lines.push(`${choice.group}: ${choiceItems}`);
               }
             });
           }
           if (opt?.note) {
-            lines.push(`  הערה: ${opt.note}`);
+            lines.push(`${this.reverseText('הערה')}: ${opt.note}`);
           }
         });
       } else if (item.options && !Array.isArray(item.options)) {
@@ -263,12 +282,12 @@ class ThermalPrinterService {
           opt.choices.forEach((choice: any) => {
             const choiceItems = choice.items.map((i: any) => i.name).join(', ');
             if (choiceItems) {
-              lines.push(`  ${choice.group}: ${choiceItems}`);
+              lines.push(`${choice.group}: ${choiceItems}`);
             }
           });
         }
         if (opt.note) {
-          lines.push(`  הערה: ${opt.note}`);
+          lines.push(`${this.reverseText('הערה')}: ${opt.note}`);
         }
       }
       
@@ -278,31 +297,43 @@ class ThermalPrinterService {
       }
     });
     
-    // קו מפריד לפני סיכום
+    // ביניים
     lines.push('-----------------------------');
+    lines.push(this.reverseText('ביניים'));
+    lines.push('');
+    lines.push(`${LTR}${Number(order.subtotal).toFixed(2)} ₪${LTR}`);
+    lines.push('____________________________');
     
-    // סיכום
-    lines.push(`${this.reverseText('ביניים')} ${LTR}${Number(order.subtotal).toFixed(2)} ₪${LTR}`);
-    lines.push(`${this.reverseText('משלוח')} ${LTR}${Number(order.delivery_fee).toFixed(2)} ₪${LTR}`);
-    lines.push(`${this.reverseText('סה"כ')} ${LTR}${Number(order.total).toFixed(2)} ₪${LTR}`);
+    // משלוח
+    lines.push(this.reverseText('משלוח'));
+    lines.push('');
+    lines.push(`${LTR}${Number(order.delivery_fee).toFixed(2)} ₪${LTR}`);
+    lines.push('____________________________');
     
-    // קו מפריד
-    lines.push('-----------------------------');
+    // סה"כ
+    lines.push(this.reverseText('סה"כ'));
+    lines.push('');
+    lines.push(`${LTR}${Number(order.total).toFixed(2)} ₪${LTR}`);
+    lines.push('____________________________');
     
-    // הערות - תמיכה בטקסט מעורב עברית/ערבית עם או בלי |
+    // הערות
     if (order.notes) {
-      lines.push('');
       lines.push(this.reverseText('הערות'));
-      
+      lines.push('____________________________');
       const noteLines = this.handleMixedText(order.notes);
       noteLines.forEach(l => lines.push(l));
     }
     
-    // תשלום
+    // שיטת תשלום
+    lines.push('____________________________');
+    lines.push(this.reverseText('שיטת תשלום'));
+    lines.push('');
     if (order.payment_method === 'card') {
-      lines.push('');
-      lines.push(this.reverseText('תשלום באשראי: שולם'));
+      lines.push(this.reverseText('אשראי'));
+    } else {
+      lines.push(this.reverseText('מזומן'));
     }
+    lines.push('____________________________');
     
     // כותרת תחתונה
     lines.push('');
