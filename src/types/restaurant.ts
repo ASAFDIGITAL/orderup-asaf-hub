@@ -6,6 +6,7 @@ export interface RestaurantSettings {
   logoUrl?: string;
   footer?: string;
   footerAr?: string;
+  fontSize?: 'normal' | 'medium' | 'large';
 }
 
 export const defaultRestaurantSettings: RestaurantSettings = {
@@ -15,5 +16,6 @@ export const defaultRestaurantSettings: RestaurantSettings = {
   phone: "",
   logoUrl: "",
   footer: "תודה רבה!",
-  footerAr: "شكراً جزيلاً!"
+  footerAr: "شكراً جزيلاً!",
+  fontSize: 'medium'
 };
