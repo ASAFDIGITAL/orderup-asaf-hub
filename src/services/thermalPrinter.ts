@@ -319,9 +319,12 @@ class ThermalPrinterService {
     try {
       const receiptText = this.formatReceiptText(order);
       
+      // פקודת ESC/POS להגדלת פונט - GS ! n (כפול 2 ברוחב וגובה)
+      const enlargeFont = `${GS}!\x11`;
+      
       await CapacitorThermalPrinter.begin()
         .align('right')
-        .text(receiptText)
+        .text(enlargeFont + receiptText)
         .text('\n\n')
         .cutPaper()
         .write();
