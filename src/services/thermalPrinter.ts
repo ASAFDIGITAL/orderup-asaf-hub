@@ -353,7 +353,7 @@ class ThermalPrinterService {
    */
   private getFontSizeCommand(): string {
     const settings = this.getRestaurantSettings();
-    const fontSize = settings.fontSize || 'medium';
+    const fontSize = settings.fontSize || 'normal';
     
     // GS ! n - פקודה לשינוי גודל פונט
     // n = (width - 1) + (height - 1) * 16

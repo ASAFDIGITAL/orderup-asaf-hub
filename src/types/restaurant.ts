@@ -17,5 +17,5 @@ export const defaultRestaurantSettings: RestaurantSettings = {
   logoUrl: "",
   footer: "תודה רבה!",
   footerAr: "شكراً جزيلاً!",
-  fontSize: 'medium'
+  fontSize: 'normal'
 };
