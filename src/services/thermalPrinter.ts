@@ -156,8 +156,17 @@ class ThermalPrinterService {
 
   /**
    * היפוך טקסט עברי בלבד
+   * אם יש ערבית בטקסט - לא הופכים
    */
   private reverseText(text: string): string {
+    const hasArabic = /[\u0600-\u06FF]/.test(text);
+    
+    // אם יש ערבית, לא הופכים כי זה כבר RTL טבעי
+    if (hasArabic) {
+      return text;
+    }
+    
+    // עברית בלבד - הופכים
     return Array.from(text).reverse().join('');
   }
 
@@ -213,10 +222,10 @@ class ThermalPrinterService {
     lines.push('-----------------------------');
     
     // פרטי לקוח
-    lines.push(`לקוח: ${order.customer_name}`);
+    lines.push(this.reverseText(`לקוח: ${order.customer_name}`));
     lines.push(`${LTR}${this.reverseText('טלפון')}: ${order.customer_phone}${LTR}`);
     if (order.customer_address) {
-      lines.push(`כתובת: ${order.customer_address}`);
+      lines.push(this.reverseText(`כתובת: ${order.customer_address}`));
     }
     
     // קו מפריד
@@ -321,11 +330,11 @@ class ThermalPrinterService {
       case 'normal':
         return `${GS}!\x00`; // רגיל (1x1)
       case 'medium':
-        return `${GS}!\x11`; // בינוני (2x2)
+        return `${GS}!\x10`; // בינוני (2x1 - רוחב כפול בלבד)
       case 'large':
-        return `${GS}!\x22`; // גדול (3x3)
+        return `${GS}!\x11`; // גדול (2x2)
       default:
-        return `${GS}!\x11`; // ברירת מחדל בינוני
+        return `${GS}!\x10`; // ברירת מחדל בינוני
     }
   }
 
