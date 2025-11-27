@@ -330,11 +330,11 @@ class ThermalPrinterService {
       case 'normal':
         return `${GS}!\x00`; // רגיל (1x1)
       case 'medium':
-        return `${GS}!\x10`; // בינוני (2x1 - רוחב כפול בלבד)
+        return `${GS}!\x00`; // בינוני (1x1 - כמו רגיל)
       case 'large':
-        return `${GS}!\x11`; // גדול (2x2)
+        return `${GS}!\x10`; // גדול (2x1 - רוחב כפול)
       default:
-        return `${GS}!\x10`; // ברירת מחדל בינוני
+        return `${GS}!\x00`; // ברירת מחדל
     }
   }
 
