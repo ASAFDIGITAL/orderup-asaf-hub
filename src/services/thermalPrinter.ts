@@ -309,6 +309,27 @@ class ThermalPrinterService {
   }
 
   /**
+   * קבלת פקודת ESC/POS לגודל פונט
+   */
+  private getFontSizeCommand(): string {
+    const settings = this.getRestaurantSettings();
+    const fontSize = settings.fontSize || 'medium';
+    
+    // GS ! n - פקודה לשינוי גודל פונט
+    // n = (width - 1) + (height - 1) * 16
+    switch (fontSize) {
+      case 'normal':
+        return `${GS}!\x00`; // רגיל (1x1)
+      case 'medium':
+        return `${GS}!\x11`; // בינוני (2x2)
+      case 'large':
+        return `${GS}!\x22`; // גדול (3x3)
+      default:
+        return `${GS}!\x11`; // ברירת מחדל בינוני
+    }
+  }
+
+  /**
    * הדפסת קבלה
    */
   async printReceipt(order: Order): Promise<void> {
@@ -318,13 +339,11 @@ class ThermalPrinterService {
 
     try {
       const receiptText = this.formatReceiptText(order);
-      
-      // פקודת ESC/POS להגדלת פונט - GS ! n (כפול 2 ברוחב וגובה)
-      const enlargeFont = `${GS}!\x11`;
+      const fontSizeCommand = this.getFontSizeCommand();
       
       await CapacitorThermalPrinter.begin()
         .align('right')
-        .text(enlargeFont + receiptText)
+        .text(fontSizeCommand + receiptText)
         .text('\n\n')
         .cutPaper()
         .write();

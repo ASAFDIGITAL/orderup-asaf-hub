@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RestaurantSettings, defaultRestaurantSettings } from "@/types/restaurant";
 import { toast } from "sonner";
 import { thermalPrinter } from "@/services/thermalPrinter";
@@ -103,6 +104,25 @@ const RestaurantSettingsDialog = ({ open, onOpenChange }: RestaurantSettingsDial
               rows={2}
               dir="rtl"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="fontSize">גודל פונט בהדפסה</Label>
+            <Select
+              value={settings.fontSize || 'medium'}
+              onValueChange={(value: 'normal' | 'medium' | 'large') => 
+                setSettings({ ...settings, fontSize: value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="בחר גודל פונט" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">רגיל</SelectItem>
+                <SelectItem value="medium">בינוני (x2)</SelectItem>
+                <SelectItem value="large">גדול (x3)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-2 pt-4">
