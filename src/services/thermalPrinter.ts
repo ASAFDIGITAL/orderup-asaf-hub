@@ -380,6 +380,12 @@ class ThermalPrinterService {
   async printReceipt(order: Order): Promise<void> {
     const settings = this.getRestaurantSettings();
 
+    // אם הופעלה הדפסה מהדפדפן - השתמש ב-window.print
+    if (settings.browserPrintEnabled) {
+      this.printViaBrowser(order);
+      return;
+    }
+
     // אם הופעלה הדפסה דרך השרת (מחשב מרוחק) - שלח לשרת
     if (settings.networkPrintEnabled && settings.networkPrintUrl) {
       await this.printViaServer(order);
@@ -407,6 +413,157 @@ class ThermalPrinterService {
       console.error('Failed to print receipt:', error);
       throw error;
     }
+  }
+
+  /**
+   * הדפסה דרך הדפדפן - פותח חלון עם קבלה מעוצבת ומריץ window.print()
+   * מתאים למדפסות 80mm המוגדרות במחשב/בדפדפן
+   */
+  printViaBrowser(order: Order): void {
+    const settings = this.getRestaurantSettings();
+    const fontSize = settings.fontSize === 'large' ? '16px'
+      : settings.fontSize === 'medium' ? '14px'
+      : '12px';
+
+    const formatPrice = (n: number) => `${Number(n).toFixed(2)} ₪`;
+    const orderDate = new Date(order.created_at);
+    const dateStr = `${orderDate.getDate().toString().padStart(2, '0')}/${(orderDate.getMonth() + 1).toString().padStart(2, '0')}/${orderDate.getFullYear()} ${orderDate.getHours().toString().padStart(2, '0')}:${orderDate.getMinutes().toString().padStart(2, '0')}`;
+
+    const itemsHtml = order.items.map((item) => {
+      let optionsHtml = '';
+      const opts = Array.isArray(item.options) ? item.options : (item.options ? [item.options] : []);
+      opts.forEach((opt: any) => {
+        if (opt?.choices && Array.isArray(opt.choices)) {
+          opt.choices.forEach((choice: any) => {
+            const choiceItems = choice.items?.map((i: any) => i.name).join(', ');
+            if (choiceItems) {
+              optionsHtml += `<div class="opt">${choice.group}: ${choiceItems}</div>`;
+            }
+          });
+        }
+        if (opt?.note) {
+          optionsHtml += `<div class="opt">הערה: ${opt.note}</div>`;
+        }
+      });
+
+      return `
+        <div class="item">
+          <div class="item-name">${item.name}</div>
+          <div class="item-row">
+            <span>כמות: ${item.qty}</span>
+            <span>${formatPrice(Number(item.total))}</span>
+          </div>
+          ${optionsHtml}
+        </div>
+      `;
+    }).join('');
+
+    const html = `
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>הזמנה #${order.id}</title>
+<style>
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', 'Heebo', sans-serif;
+    direction: rtl;
+    color: #000;
+    background: #fff;
+  }
+  body {
+    width: 72mm;
+    padding: 4mm 4mm 8mm 4mm;
+    font-size: ${fontSize};
+    line-height: 1.4;
+  }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .title { font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 4px; }
+  .sub { text-align: center; font-size: 11px; margin-bottom: 6px; }
+  .sep { border-top: 1px dashed #000; margin: 6px 0; }
+  .row { display: flex; justify-content: space-between; gap: 8px; }
+  .label { font-weight: bold; }
+  .item { margin-bottom: 6px; }
+  .item-name { font-weight: bold; }
+  .item-row { display: flex; justify-content: space-between; font-size: 12px; }
+  .opt { font-size: 11px; color: #333; padding-right: 6px; }
+  .total { font-size: 15px; font-weight: bold; }
+  .footer { text-align: center; margin-top: 8px; font-weight: bold; }
+  @media print {
+    body { width: 72mm; }
+  }
+</style>
+</head>
+<body>
+  <div class="title">${settings.name || 'הזמנה / קבלה'}</div>
+  ${settings.address ? `<div class="sub">${settings.address}</div>` : ''}
+  ${settings.phone ? `<div class="sub">טל: ${settings.phone}</div>` : ''}
+
+  <div class="sep"></div>
+
+  <div class="row"><span class="label">הזמנה #</span><span>${order.id}</span></div>
+  <div class="row"><span class="label">תאריך</span><span>${dateStr}</span></div>
+
+  <div class="sep"></div>
+
+  <div class="row"><span class="label">לקוח</span><span>${order.customer_name || ''}</span></div>
+  <div class="row"><span class="label">טלפון</span><span dir="ltr">${order.customer_phone || ''}</span></div>
+  ${order.customer_address ? `<div class="row"><span class="label">כתובת</span><span>${order.customer_address}</span></div>` : ''}
+
+  <div class="sep"></div>
+
+  <div class="bold center">פרטים</div>
+  <div class="sep"></div>
+
+  ${itemsHtml}
+
+  <div class="sep"></div>
+
+  <div class="row"><span>ביניים</span><span>${formatPrice(Number(order.subtotal))}</span></div>
+  <div class="row"><span>משלוח</span><span>${formatPrice(Number(order.delivery_fee))}</span></div>
+  <div class="sep"></div>
+  <div class="row total"><span>סה"כ</span><span>${formatPrice(Number(order.total))}</span></div>
+
+  ${order.notes ? `
+    <div class="sep"></div>
+    <div class="bold">הערות:</div>
+    <div>${order.notes.replace(/\n/g, '<br>')}</div>
+  ` : ''}
+
+  <div class="sep"></div>
+  <div class="row"><span class="label">תשלום</span><span>${order.payment_method === 'card' ? 'אשראי' : 'מזומן'}</span></div>
+
+  <div class="footer">${settings.footer || 'תודה רבה!'}</div>
+
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+        setTimeout(function() { window.close(); }, 500);
+      }, 200);
+    };
+  </script>
+</body>
+</html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (!printWindow) {
+      throw new Error('הדפדפן חסם את חלון ההדפסה. אפשר חלונות קופצים ונסה שוב.');
+    }
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    console.log('🖨️ נשלחה הזמנה #' + order.id + ' להדפסה דרך הדפדפן');
   }
 
   /**
