@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, Printer } from "lucide-react";
 import { RestaurantSettings, defaultRestaurantSettings } from "@/types/restaurant";
 import { toast } from "sonner";
 import { thermalPrinter } from "@/services/thermalPrinter";
@@ -16,6 +19,7 @@ interface RestaurantSettingsDialogProps {
 
 const RestaurantSettingsDialog = ({ open, onOpenChange }: RestaurantSettingsDialogProps) => {
   const [settings, setSettings] = useState<RestaurantSettings>(defaultRestaurantSettings);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -33,6 +37,22 @@ const RestaurantSettingsDialog = ({ open, onOpenChange }: RestaurantSettingsDial
     thermalPrinter.saveRestaurantSettings(settings);
     toast.success("ההגדרות נשמרו בהצלחה");
     onOpenChange(false);
+  };
+
+  const handleTestPrint = async () => {
+    // שמור הגדרות לפני בדיקה
+    thermalPrinter.saveRestaurantSettings(settings);
+    setIsTesting(true);
+    try {
+      toast.loading("שולח הדפסת בדיקה...", { id: "test-print" });
+      await thermalPrinter.testServerPrint();
+      toast.success("הדפסת בדיקה נשלחה בהצלחה!", { id: "test-print" });
+    } catch (error: any) {
+      console.error("Test print failed:", error);
+      toast.error(error?.message || "כישלון בהדפסת בדיקה", { id: "test-print" });
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
