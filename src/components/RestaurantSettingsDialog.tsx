@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Loader2, Printer } from "lucide-react";
 import { RestaurantSettings, defaultRestaurantSettings } from "@/types/restaurant";
 import { toast } from "sonner";
 import { thermalPrinter } from "@/services/thermalPrinter";
@@ -16,6 +19,7 @@ interface RestaurantSettingsDialogProps {
 
 const RestaurantSettingsDialog = ({ open, onOpenChange }: RestaurantSettingsDialogProps) => {
   const [settings, setSettings] = useState<RestaurantSettings>(defaultRestaurantSettings);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -33,6 +37,22 @@ const RestaurantSettingsDialog = ({ open, onOpenChange }: RestaurantSettingsDial
     thermalPrinter.saveRestaurantSettings(settings);
     toast.success("ההגדרות נשמרו בהצלחה");
     onOpenChange(false);
+  };
+
+  const handleTestPrint = async () => {
+    // שמור הגדרות לפני בדיקה
+    thermalPrinter.saveRestaurantSettings(settings);
+    setIsTesting(true);
+    try {
+      toast.loading("שולח הדפסת בדיקה...", { id: "test-print" });
+      await thermalPrinter.testServerPrint();
+      toast.success("הדפסת בדיקה נשלחה בהצלחה!", { id: "test-print" });
+    } catch (error: any) {
+      console.error("Test print failed:", error);
+      toast.error(error?.message || "כישלון בהדפסת בדיקה", { id: "test-print" });
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
@@ -123,6 +143,86 @@ const RestaurantSettingsDialog = ({ open, onOpenChange }: RestaurantSettingsDial
                 <SelectItem value="large">גדול (x3)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <Separator className="my-2" />
+
+          {/* הדפסה דרך מחשב מרוחק */}
+          <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="networkPrint" className="text-base font-semibold">
+                  הדפסה דרך מחשב (Network)
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  שלח הדפסות למדפסת המחוברת למחשב דרך השרת
+                </p>
+              </div>
+              <Switch
+                id="networkPrint"
+                checked={settings.networkPrintEnabled || false}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, networkPrintEnabled: checked })
+                }
+              />
+            </div>
+
+            {settings.networkPrintEnabled && (
+              <div className="space-y-3 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="networkPrintUrl">כתובת שרת ההדפסה</Label>
+                  <Input
+                    id="networkPrintUrl"
+                    value={settings.networkPrintUrl || ""}
+                    onChange={(e) =>
+                      setSettings({ ...settings, networkPrintUrl: e.target.value })
+                    }
+                    placeholder="https://your-server.com/api/print"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="networkPrinterName">שם המדפסת המשותפת</Label>
+                  <Input
+                    id="networkPrinterName"
+                    value={settings.networkPrinterName || ""}
+                    onChange={(e) =>
+                      setSettings({ ...settings, networkPrinterName: e.target.value })
+                    }
+                    placeholder="ThermalPrinter"
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    שם המדפסת ששיתפת ב-Windows
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleTestPrint}
+                  disabled={
+                    isTesting ||
+                    !settings.networkPrintUrl ||
+                    !settings.networkPrinterName
+                  }
+                >
+                  {isTesting ? (
+                    <>
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      שולח...
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="ml-2 h-4 w-4" />
+                      הדפסת בדיקה
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-4">
