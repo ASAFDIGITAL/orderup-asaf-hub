@@ -378,6 +378,15 @@ class ThermalPrinterService {
    * הדפסת קבלה
    */
   async printReceipt(order: Order): Promise<void> {
+    const settings = this.getRestaurantSettings();
+
+    // אם הופעלה הדפסה דרך השרת (מחשב מרוחק) - שלח לשרת
+    if (settings.networkPrintEnabled && settings.networkPrintUrl) {
+      await this.printViaServer(order);
+      return;
+    }
+
+    // אחרת - הדפסה ישירה דרך Bluetooth
     if (!this.deviceAddress) {
       throw new Error('לא מחובר למדפסת. יש להתחבר תחילה.');
     }
@@ -385,18 +394,107 @@ class ThermalPrinterService {
     try {
       const receiptText = this.formatReceiptText(order);
       const fontSizeCommand = this.getFontSizeCommand();
-      
+
       await CapacitorThermalPrinter.begin()
         .align('right')
         .text(fontSizeCommand + receiptText)
         .text('\n\n')
         .cutPaper()
         .write();
-        
+
       console.log('✅ קבלה הודפסה בהצלחה - הזמנה #' + order.id);
     } catch (error) {
       console.error('Failed to print receipt:', error);
       throw error;
+    }
+  }
+
+  /**
+   * הדפסה דרך השרת (Network Printer / מדפסת משותפת ב-Windows)
+   * דורש endpoint בשרת Laravel שמקבל content + printer_name
+   * ושולח את התוכן למדפסת המחוברת למחשב.
+   */
+  async printViaServer(order: Order): Promise<void> {
+    const settings = this.getRestaurantSettings();
+
+    if (!settings.networkPrintUrl) {
+      throw new Error('כתובת שרת ההדפסה לא מוגדרת');
+    }
+    if (!settings.networkPrinterName) {
+      throw new Error('שם המדפסת המשותפת לא מוגדר');
+    }
+
+    const receiptText = this.formatReceiptText(order);
+
+    try {
+      console.log('🖨️ שולח הדפסה לשרת:', settings.networkPrintUrl);
+
+      const response = await fetch(settings.networkPrintUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          content: receiptText,
+          printer_name: settings.networkPrinterName,
+          order_id: order.id,
+          font_size: settings.fontSize || 'normal',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`שגיאה מהשרת [${response.status}]: ${errorText}`);
+      }
+
+      console.log('✅ הזמנה #' + order.id + ' נשלחה למדפסת דרך השרת');
+    } catch (error) {
+      console.error('Failed to print via server:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * בדיקת חיבור לשרת ההדפסה (Test Print)
+   */
+  async testServerPrint(): Promise<void> {
+    const settings = this.getRestaurantSettings();
+
+    if (!settings.networkPrintUrl) {
+      throw new Error('כתובת שרת ההדפסה לא מוגדרת');
+    }
+    if (!settings.networkPrinterName) {
+      throw new Error('שם המדפסת המשותפת לא מוגדר');
+    }
+
+    const testContent = [
+      this.reverseText('בדיקת הדפסה'),
+      '',
+      this.reverseText('המדפסת עובדת!'),
+      '',
+      new Date().toLocaleString('he-IL'),
+      '',
+      '_______________',
+      '',
+    ].join('\n');
+
+    const response = await fetch(settings.networkPrintUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        content: testContent,
+        printer_name: settings.networkPrinterName,
+        font_size: settings.fontSize || 'normal',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`שגיאה מהשרת [${response.status}]: ${errorText}`);
     }
   }
 
