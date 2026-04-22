@@ -11,6 +11,8 @@ export interface RestaurantSettings {
   networkPrintEnabled?: boolean;
   networkPrintUrl?: string; // לדוגמה: https://bait-haof.com/api/print
   networkPrinterName?: string; // שם המדפסת המשותפת ב-Windows
+  // הדפסה ישירה מהדפדפן (window.print) - הכי פשוט
+  browserPrintEnabled?: boolean;
 }
 
 export const defaultRestaurantSettings: RestaurantSettings = {
@@ -24,5 +26,6 @@ export const defaultRestaurantSettings: RestaurantSettings = {
   fontSize: 'normal',
   networkPrintEnabled: false,
   networkPrintUrl: "",
-  networkPrinterName: ""
+  networkPrinterName: "",
+  browserPrintEnabled: false
 };
