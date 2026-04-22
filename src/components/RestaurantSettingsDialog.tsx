@@ -147,6 +147,34 @@ const RestaurantSettingsDialog = ({ open, onOpenChange }: RestaurantSettingsDial
 
           <Separator className="my-2" />
 
+          {/* הדפסה דרך הדפדפן - הכי פשוט */}
+          <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="browserPrint" className="text-base font-semibold">
+                  הדפסה מהדפדפן 🖨️
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  פותח חלון הדפסה ושולח ישירות למדפסת המוגדרת במחשב (הכי פשוט!)
+                </p>
+              </div>
+              <Switch
+                id="browserPrint"
+                checked={settings.browserPrintEnabled || false}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, browserPrintEnabled: checked })
+                }
+              />
+            </div>
+            {settings.browserPrintEnabled && (
+              <p className="text-xs text-muted-foreground bg-background p-2 rounded">
+                💡 בדיאלוג ההדפסה של הדפדפן בחר את המדפסת <strong>cash</strong> וגודל נייר <strong>80mm</strong>.
+              </p>
+            )}
+          </div>
+
+          <Separator className="my-2" />
+
           {/* הדפסה דרך מחשב מרוחק */}
           <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
             <div className="flex items-center justify-between">
