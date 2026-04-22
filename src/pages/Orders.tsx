@@ -237,7 +237,11 @@ const Orders = () => {
 
   const handlePrintOrder = async (order: Order) => {
     try {
-      if (!isPrinterConnected) {
+      // בדוק אם הופעלה הדפסה מהדפדפן או דרך השרת - אם כן, אין צורך במדפסת Bluetooth
+      const settings = JSON.parse(localStorage.getItem('restaurant_settings') || '{}');
+      const usingAlternativePrint = settings.browserPrintEnabled || settings.networkPrintEnabled;
+
+      if (!isPrinterConnected && !usingAlternativePrint) {
         toast.error("יש להתחבר למדפסת תחילה");
         return;
       }
