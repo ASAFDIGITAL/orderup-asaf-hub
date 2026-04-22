@@ -14,7 +14,14 @@ class ThermalPrinterService {
    */
   async initialize(): Promise<void> {
     console.log('Thermal printer ready');
-    
+
+    // אם הופעלה הדפסה מהדפדפן/שרת - אין צורך לחפש מדפסת Bluetooth
+    const settings = this.getRestaurantSettings();
+    if (settings.browserPrintEnabled || settings.networkPrintEnabled) {
+      console.log('הדפסה אלטרנטיבית מופעלת - מדלג על חיבור Bluetooth');
+      return;
+    }
+
     // ניסיון לטעון מדפסת שמורה
     const savedAddress = localStorage.getItem('saved_printer_address');
     if (savedAddress) {
