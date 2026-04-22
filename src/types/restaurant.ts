@@ -7,6 +7,10 @@ export interface RestaurantSettings {
   footer?: string;
   footerAr?: string;
   fontSize?: 'normal' | 'medium' | 'large';
+  // הגדרות הדפסה מרוחקת דרך מחשב (Network Printer)
+  networkPrintEnabled?: boolean;
+  networkPrintUrl?: string; // לדוגמה: https://bait-haof.com/api/print
+  networkPrinterName?: string; // שם המדפסת המשותפת ב-Windows
 }
 
 export const defaultRestaurantSettings: RestaurantSettings = {
@@ -17,5 +21,8 @@ export const defaultRestaurantSettings: RestaurantSettings = {
   logoUrl: "",
   footer: "תודה רבה!",
   footerAr: "شكراً جزيلاً!",
-  fontSize: 'normal'
+  fontSize: 'normal',
+  networkPrintEnabled: false,
+  networkPrintUrl: "",
+  networkPrinterName: ""
 };
